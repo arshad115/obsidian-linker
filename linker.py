@@ -41,9 +41,20 @@ def link_files(markdown_files):
             if line.strip().startswith("```"):
                 in_code_block = not in_code_block
             if not in_code_block:
+                linked_positions = []
                 for title in sorted_titles:
                     pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
-                    line = pattern.sub(lambda m: f"[[{m.group(0)}]]" if f"[[{m.group(0)}]]" not in line and not re.search(r'\[\[.*?\]\]', line) else m.group(0), line)
+                    start = 0
+                    while True:
+                        match = pattern.search(line, start)
+                        if not match:
+                            break
+                        if f"[[{match.group(0)}]]" not in line and not any(start <= pos < match.end() for pos in linked_positions):
+                            line = line[:match.start()] + f"[[{match.group(0)}]]" + line[match.end():]
+                            linked_positions.extend(range(match.start(), match.start() + len(f"[[{match.group(0)}]]")))
+                            start = match.start() + len(f"[[{match.group(0)}]]")
+                        else:
+                            start = match.end()
             new_content_lines.append(line)
         new_content = '\n'.join(new_content_lines)
         if new_content != original_content:
