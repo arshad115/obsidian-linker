@@ -34,7 +34,7 @@ def link_files(markdown_files):
         original_content = content
         for title, linked_file in file_titles.items():
             pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
-            content = pattern.sub(f"[{title}]({os.path.relpath(linked_file, os.path.dirname(file))})", content)
+            content = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})", content)
         if content != original_content:
             edited_files.append(file)
             file_contents[file] = content
