@@ -29,6 +29,9 @@ def link_files(markdown_files):
             if title:
                 file_titles[title.lower()] = file
 
+    # Sort titles by length in descending order
+    sorted_titles = sorted(file_titles.keys(), key=len, reverse=True)
+
     # Create links
     for file, content in tqdm(file_contents.items(), desc="Linking files"):
         original_content = content
@@ -38,9 +41,10 @@ def link_files(markdown_files):
             if line.strip().startswith("```"):
                 in_code_block = not in_code_block
             if not in_code_block:
-                for title, linked_file in file_titles.items():
+                for title in sorted_titles:
+                    linked_file = file_titles[title]
                     pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
-                    line = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})" if f"[{m.group(0)}]" not in line else m.group(0), line)
+                    line = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})" if f"[{m.group(0)}]" not in line and not re.search(r'\[.*?\]\(.*?\)', line) else m.group(0), line)
             new_content_lines.append(line)
         new_content = '\n'.join(new_content_lines)
         if new_content != original_content:
