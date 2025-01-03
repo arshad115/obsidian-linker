@@ -34,26 +34,26 @@ def link_files(markdown_files):
         original_content = content
         for title, linked_file in file_titles.items():
             pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
-            content = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})", content)
+            content = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})" if f"[{m.group(0)}]" not in content else m.group(0), content)
         if content != original_content:
             edited_files.append(file)
             file_contents[file] = content
 
     # Write the updated contents back to the files
-    for file in tqdm(edited_files, desc="Writing files"):
+    for file in tqdm(set(edited_files), desc="Writing files"):
         with open(file, 'w', encoding='utf-8') as f:
             f.write(file_contents[file])
 
-    print(f"Edited {len(edited_files)} files.")
+    print(f"Edited {len(set(edited_files))} files.")
     if edited_files:
         print("Modified files:")
-        for file in edited_files:
+        for file in set(edited_files):
             print(file)
 
     # Print summary
     print("\nSummary:")
     print(f"Total markdown files found: {len(markdown_files)}")
-    print(f"Total files edited: {len(edited_files)}")
+    print(f"Total files edited: {len(set(edited_files))}")
 
 def main():
     if len(sys.argv) != 2:
