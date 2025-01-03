@@ -32,12 +32,20 @@ def link_files(markdown_files):
     # Create links
     for file, content in tqdm(file_contents.items(), desc="Linking files"):
         original_content = content
-        for title, linked_file in file_titles.items():
-            pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
-            content = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})" if f"[{m.group(0)}]" not in content else m.group(0), content)
-        if content != original_content:
+        in_code_block = False
+        new_content_lines = []
+        for line in content.split('\n'):
+            if line.strip().startswith("```"):
+                in_code_block = not in_code_block
+            if not in_code_block:
+                for title, linked_file in file_titles.items():
+                    pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
+                    line = pattern.sub(lambda m: f"[{m.group(0)}]({os.path.relpath(linked_file, os.path.dirname(file))})" if f"[{m.group(0)}]" not in line else m.group(0), line)
+            new_content_lines.append(line)
+        new_content = '\n'.join(new_content_lines)
+        if new_content != original_content:
             edited_files.append(file)
-            file_contents[file] = content
+            file_contents[file] = new_content
 
     # Write the updated contents back to the files
     for file in tqdm(set(edited_files), desc="Writing files"):
