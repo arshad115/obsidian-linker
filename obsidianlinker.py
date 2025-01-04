@@ -13,8 +13,6 @@ INLINE_CODE_PATTERN = re.compile(r'`[^`]*`')
 EXISTING_LINKS_PATTERN = re.compile(r'\[\[.*?\]\]')
 METADATA_PATTERN = re.compile(r'---\s*\n([\s\S]*?)\n\s*---', re.MULTILINE)
 
-TITLE_PATTERN_TEMPLATE = r'(?<!\[\[)\b{}\b(?!\]\])'
-
 def find_markdown_files(directory):
     markdown_files = []
     print(f"Searching for markdown files in directory: {directory}")
@@ -82,7 +80,7 @@ def link_files(markdown_files):
 
         for title_lower, title in titles.items():
             if title_lower in content_without_links.lower():
-                pattern = re.compile(TITLE_PATTERN_TEMPLATE.format(re.escape(title)), re.IGNORECASE)
+                pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
 
         # Restore inline code, code blocks, and metadata sections
