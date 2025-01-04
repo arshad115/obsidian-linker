@@ -27,23 +27,23 @@ def link_files(markdown_files):
             file_contents[file] = content
             title = extract_title(file)
             if title:
-                file_titles[title.lower()] = file
-
-    # Sort titles by length in descending order
-    sorted_titles = sorted(file_titles.keys(), key=len, reverse=True)
+                file_titles[title.lower()] = title  # Store the original title
 
     # Create links
     for file, content in tqdm(file_contents.items(), desc="Linking files"):
         original_content = content
         in_code_block = False
+        in_metadata_block = False
         new_content_lines = content.split('\n')
         
         for i, line in enumerate(new_content_lines):
             if line.strip().startswith("```"):
                 in_code_block = not in_code_block
-            if not in_code_block:
+            if line.strip() == "---":
+                in_metadata_block = not in_metadata_block
+            if not in_code_block and not in_metadata_block:
                 linked_positions = []
-                for title in sorted_titles:
+                for title in file_titles.keys():
                     pattern = re.compile(rf'\b{re.escape(title)}\b', re.IGNORECASE)
                     start = 0
                     while True:
@@ -54,9 +54,10 @@ def link_files(markdown_files):
                         if f"[[{match.group(0)}]]" not in line and not any(start <= pos < match.end() for pos in linked_positions):
                             # Ensure the match is not within an existing link
                             if not re.search(r'\[\[.*?\]\]', line[match.start():match.end()]):
-                                line = line[:match.start()] + f"[[{match.group(0)}]]" + line[match.end():]
-                                linked_positions.extend(range(match.start(), match.start() + len(f"[[{match.group(0)}]]")))
-                                start = match.start() + len(f"[[{match.group(0)}]]")
+                                original_title = file_titles[title]
+                                line = line[:match.start()] + f"[[{original_title}]]" + line[match.end():]
+                                linked_positions.extend(range(match.start(), match.start() + len(f"[[{original_title}]]")))
+                                start = match.start() + len(f"[[{original_title}]]")
                             else:
                                 start = match.end()
                         else:
@@ -83,6 +84,8 @@ def link_files(markdown_files):
     print("\nSummary:")
     print(f"Total markdown files found: {len(markdown_files)}")
     print(f"Total files edited: {len(set(edited_files))}")
+
+    return edited_files
 
 def main():
     if len(sys.argv) != 2:
