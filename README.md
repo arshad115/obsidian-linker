@@ -52,6 +52,7 @@ This will execute all the tests and provide you with a summary of the results. M
 - [ ] Add support for alias links
 - [ ] Multithreading
 - [ ] Write additional tests for edge cases
+- [ ] Make it into a plugin for Obsidian
 
 ## Contributors
 

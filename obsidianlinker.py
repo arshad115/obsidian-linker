@@ -82,9 +82,12 @@ def link_files(markdown_files):
         # Exclude existing links
         content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
 
+        links_added_in_file = 0
         for title_lower, title in sorted_titles:
             if title_lower in content_without_links.lower():
                 pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
+                matches = list(pattern.finditer(content))
+                links_added_in_file += len(matches)
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
 
         # Restore inline code, code blocks, and metadata sections
@@ -99,7 +102,7 @@ def link_files(markdown_files):
         if content != original_content:
             modified_contents[file] = (content, metadata, inline_code_map, code_block_map)  # Store content, metadata, inline code map, and code block map
             edited_files.add(file)
-            total_links_added += 1
+            total_links_added += links_added_in_file
 
     file_contents = read_files(markdown_files)
 
