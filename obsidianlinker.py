@@ -1,5 +1,6 @@
 import os
 import re
+import argparse
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
@@ -9,10 +10,12 @@ INLINE_CODE_PLACEHOLDER = "<INLINE_CODE_{}>"
 
 def find_markdown_files(directory):
     markdown_files = []
+    print(f"Searching for markdown files in directory: {directory}")
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".md"):
                 markdown_files.append(os.path.join(root, file))
+    print(f"Found {len(markdown_files)} markdown files.")
     return markdown_files
 
 def link_files(markdown_files):
@@ -26,6 +29,7 @@ def link_files(markdown_files):
 
     def process_file(file):
         nonlocal total_links_added
+        print(f"Processing file: {file}")
         with open(file, 'r', encoding='utf-8') as f:
             content = f.read()
 
@@ -72,3 +76,18 @@ def link_files(markdown_files):
         list(tqdm(executor.map(process_file, markdown_files), total=len(markdown_files)))
 
     return edited_files, total_links_added
+
+def main():
+    parser = argparse.ArgumentParser(description="Link markdown files in an Obsidian vault.")
+    parser.add_argument("directory", help="Path to the Obsidian vault directory")
+    args = parser.parse_args()
+
+    directory = os.path.expanduser(args.directory)  # Expand user directory
+    markdown_files = find_markdown_files(directory)
+    edited_files, total_links_added = link_files(markdown_files)
+
+    print(f"Total links added: {total_links_added}")
+    print(f"Total files edited: {len(edited_files)}")
+
+if __name__ == "__main__":
+    main()
