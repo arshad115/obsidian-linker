@@ -13,6 +13,8 @@ INLINE_CODE_PATTERN = re.compile(r'`[^`]*`')
 EXISTING_LINKS_PATTERN = re.compile(r'\[\[.*?\]\]')
 METADATA_PATTERN = re.compile(r'---\s*\n([\s\S]*?)\n\s*---', re.MULTILINE)
 
+TITLE_PATTERN_TEMPLATE = r'(?<!\[\[)\b{}\b(?!\]\])'
+
 def find_markdown_files(directory):
     markdown_files = []
     print(f"Searching for markdown files in directory: {directory}")
@@ -65,8 +67,9 @@ def link_files(markdown_files):
         
         # Exclude code blocks
         code_blocks = CODE_BLOCK_PATTERN.findall(content)
-        for i, block in enumerate(code_blocks):
-            content = content.replace(block, CODE_BLOCK_PLACEHOLDER.format(i))
+        code_block_map = {CODE_BLOCK_PLACEHOLDER.format(i): block for i, block in enumerate(code_blocks)}
+        for placeholder, block in code_block_map.items():
+            content = content.replace(block, placeholder)
 
         # Exclude inline code
         inline_code = INLINE_CODE_PATTERN.findall(content)
@@ -79,20 +82,20 @@ def link_files(markdown_files):
 
         for title_lower, title in titles.items():
             if title_lower in content_without_links.lower():
-                pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
+                pattern = re.compile(TITLE_PATTERN_TEMPLATE.format(re.escape(title)), re.IGNORECASE)
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
 
         # Restore inline code, code blocks, and metadata sections
         for placeholder, code in inline_code_map.items():
             content = content.replace(placeholder, code)
-        for i, block in enumerate(code_blocks):
-            content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
+        for placeholder, block in code_block_map.items():
+            content = content.replace(placeholder, block)
         
         if metadata:
             content = METADATA_PLACEHOLDER + content  # Prepend metadata placeholder
 
         if content != original_content:
-            modified_contents[file] = (content, metadata, inline_code_map, code_blocks)  # Store content, metadata, inline code map, and code blocks
+            modified_contents[file] = (content, metadata, inline_code_map, code_block_map)  # Store content, metadata, inline code map, and code block map
             edited_files.add(file)
             total_links_added += 1
 
@@ -104,16 +107,20 @@ def link_files(markdown_files):
             process_pbar.update(1)
 
     with tqdm(total=len(modified_contents), desc="Writing files") as write_pbar:
-        for file, (content, metadata, inline_code_map, code_blocks) in modified_contents.items():
+        for file, (content, metadata, inline_code_map, code_block_map) in modified_contents.items():
             try:
                 # Restore inline code and code blocks
                 for placeholder, code in inline_code_map.items():
                     content = content.replace(placeholder, code)
-                for i, block in enumerate(code_blocks):
-                    content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
-                
+                for placeholder, block in code_block_map.items():
+                    content = content.replace(placeholder, block)
+                    
+                # Restore metadata
+                if metadata:
+                    content = content.replace(METADATA_PLACEHOLDER, metadata)
+
                 with open(file, 'w', encoding='utf-8') as f:
-                    f.write(content.replace(METADATA_PLACEHOLDER, metadata))  # Restore metadata
+                    f.write(content)  
             except IOError as e:
                 print(f"Error writing to file {file}: {e}")
             write_pbar.update(1)
