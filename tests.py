@@ -212,6 +212,30 @@ class Tests(unittest.TestCase):
             self.assertIn("[[Functional Programming]]", content) and self.assertIn("[[functional programming]]", content)
         self.assertIn(self.file3_path, edited_files)
 
-    
+    def test_no_links_in_inline_code(self):
+        self.create_file(self.file1_path, "This is a file about object-oriented programming.")
+        self.create_file(self.file3_path, "This README mentions `object-oriented programming` in inline code.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("`object-oriented programming`", content)
+            self.assertNotIn("[[object-oriented programming]]", content)
+
+    def test_links_outside_inline_code(self):
+        self.create_file(self.file1_path, "This is a file about object-oriented programming.")
+        self.create_file(self.file3_path, "This README mentions `object-oriented programming` in inline code and object-oriented programming outside.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("`object-oriented programming`", content)
+            self.assertIn("[[object-oriented programming]] outside", content)
+        self.assertIn(self.file3_path, edited_files)  # Verify the file was edited
+
 if __name__ == "__main__":
     unittest.main()

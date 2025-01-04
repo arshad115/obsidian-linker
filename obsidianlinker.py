@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 CODE_BLOCK_PLACEHOLDER = "<CODE_BLOCK_{}>"
 METADATA_PLACEHOLDER = "<METADATA_SECTION>"
+INLINE_CODE_PLACEHOLDER = "<INLINE_CODE_{}>"
 
 def find_markdown_files(directory):
     markdown_files = []
@@ -40,6 +41,11 @@ def link_files(markdown_files):
         for i, block in enumerate(code_blocks):
             content = content.replace(block, CODE_BLOCK_PLACEHOLDER.format(i))
 
+        # Exclude inline code
+        inline_code = re.findall(r'`[^`]*`', content)
+        for i, code in enumerate(inline_code):
+            content = content.replace(code, INLINE_CODE_PLACEHOLDER.format(i))
+
         # Exclude existing links
         content_without_links = re.sub(r'\[\[.*?\]\]', '', content)
 
@@ -48,7 +54,9 @@ def link_files(markdown_files):
                 pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
 
-        # Restore code blocks and metadata sections
+        # Restore inline code, code blocks, and metadata sections
+        for i, code in enumerate(inline_code):
+            content = content.replace(INLINE_CODE_PLACEHOLDER.format(i), code, 1)
         for i, block in enumerate(code_blocks):
             content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
         for section in metadata_sections:
