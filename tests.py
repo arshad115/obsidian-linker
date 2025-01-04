@@ -24,7 +24,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions object-oriented programming.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)  # Capture the return value
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -36,7 +36,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions Object-Oriented Programming.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
         
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -48,7 +48,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions object-oriented programming.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -60,7 +60,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README does not mention any programming languages.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -72,7 +72,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions object-oriented programming, but not object oriented programming.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -85,7 +85,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions object-oriented programming, but not object oriented programming.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -100,7 +100,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions object-oriented programming, functional programming, and object.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)  # Capture the return value
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -122,7 +122,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, content)
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)  # Capture the return value
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -137,7 +137,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions Object-Oriented programming and objects.")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)  # Capture the return value
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -151,7 +151,7 @@ class Tests(unittest.TestCase):
         self.create_file(self.file3_path, "This README mentions [[Object-Oriented Programming]] and [[Object]].")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -161,21 +161,21 @@ class Tests(unittest.TestCase):
 
     def test_no_links_in_code_blocks(self):
         self.create_file(self.file1_path, "This is a file about object-oriented programming.")
-        self.create_file(self.file3_path, """This README mentions object-oriented programming.
+        self.create_file(self.file3_path, """This README mentions Object-Oriented Programming.
 
         ```
-        This is a code block mentioning object-oriented programming.
+        This is a code block mentioning Object-Oriented Programming.
         ```
-        And here is another mention of object-oriented programming outside the code block.
+        And here is another mention of Object-Oriented Programming outside the code block.
         """)
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)  # Capture the return value
+        edited_files, total_links_added = link_files(markdown_files)  # Capture the return value
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
             self.assertIn("[[Object-Oriented Programming]]", content)
-            self.assertIn("```\n    This is a code block mentioning object-oriented programming.\n    ```", content)
+            self.assertIn("```\n        This is a code block mentioning Object-Oriented Programming.\n        ```", content)
             self.assertNotIn("[[Object-Oriented Programming]]", content.split("```")[1])  # Ensure no link inside code block
         self.assertIn(self.file3_path, edited_files)  # Verify the file was edited
 
@@ -188,7 +188,7 @@ class Tests(unittest.TestCase):
         This README mentions object-oriented programming.
         """)
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -204,7 +204,7 @@ class Tests(unittest.TestCase):
         This README also mentions Object-Oriented Programming and functional programming.""")
 
         markdown_files = find_markdown_files(self.temp_dir.name)
-        edited_files = link_files(markdown_files)
+        edited_files, total_links_added = link_files(markdown_files)
 
         with open(self.file3_path, 'r', encoding='utf-8') as f:
             content = f.read()

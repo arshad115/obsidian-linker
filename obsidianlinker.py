@@ -3,6 +3,9 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
+CODE_BLOCK_PLACEHOLDER = "<CODE_BLOCK_{}>"
+METADATA_PLACEHOLDER = "<METADATA_SECTION>"
+
 def find_markdown_files(directory):
     markdown_files = []
     for root, _, files in os.walk(directory):
@@ -30,7 +33,12 @@ def link_files(markdown_files):
         # Exclude metadata sections
         metadata_sections = re.findall(r'---([\s\S]*?)---', content, re.DOTALL | re.MULTILINE)
         for section in metadata_sections:
-            content = content.replace(section, '')
+            content = content.replace(section, METADATA_PLACEHOLDER)
+
+        # Exclude code blocks
+        code_blocks = re.findall(r'```[\s\S]*?```', content, re.DOTALL | re.MULTILINE)
+        for i, block in enumerate(code_blocks):
+            content = content.replace(block, CODE_BLOCK_PLACEHOLDER.format(i))
 
         # Exclude existing links
         content_without_links = re.sub(r'\[\[.*?\]\]', '', content)
@@ -40,20 +48,19 @@ def link_files(markdown_files):
                 pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
 
-        # Restore metadata sections
+        # Restore code blocks and metadata sections
+        for i, block in enumerate(code_blocks):
+            content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
         for section in metadata_sections:
-            content = section + content
+            content = content.replace(METADATA_PLACEHOLDER, section, 1)
 
         if content != original_content:
             with open(file, 'w', encoding='utf-8') as f:
                 f.write(content)
             edited_files.add(file)
-            total_links_added += content.count('[[') - original_content.count('[[')
+            total_links_added += 1
 
     with ThreadPoolExecutor() as executor:
-        list(tqdm(executor.map(process_file, markdown_files), total=len(markdown_files), desc="Linking files"))
+        list(tqdm(executor.map(process_file, markdown_files), total=len(markdown_files)))
 
-    print(f"Total links added: {total_links_added}")
-    print(f"Total files edited: {len(edited_files)}")
-
-    return edited_files
+    return edited_files, total_links_added
