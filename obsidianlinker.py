@@ -1,7 +1,6 @@
 import os
 import re
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
 CODE_BLOCK_PLACEHOLDER = "<CODE_BLOCK_{}>"
@@ -27,9 +26,9 @@ def link_files(markdown_files):
     edited_files = set()
     total_links_added = 0
 
-    def process_file(file):
+    def process_file(file, pbar):
         nonlocal total_links_added
-        print(f"Processing file: {file}")
+        # print(f"Processing file: {file}")
         with open(file, 'r', encoding='utf-8') as f:
             content = f.read()
 
@@ -72,8 +71,11 @@ def link_files(markdown_files):
             edited_files.add(file)
             total_links_added += 1
 
-    with ThreadPoolExecutor() as executor:
-        list(tqdm(executor.map(process_file, markdown_files), total=len(markdown_files)))
+        pbar.update(1)
+
+    with tqdm(total=len(markdown_files), desc="Processing files") as pbar:
+        for file in markdown_files:
+            process_file(file, pbar)
 
     return edited_files, total_links_added
 
