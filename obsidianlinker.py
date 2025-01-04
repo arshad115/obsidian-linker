@@ -61,10 +61,6 @@ def link_files(markdown_files):
 
         original_content = content
 
-        # Exclude metadata sections
-        metadata, content = extract_metadata(content)
-        if metadata:
-            content = content.replace(metadata, METADATA_PLACEHOLDER)
         
         # Exclude code blocks
         code_blocks = CODE_BLOCK_PATTERN.findall(content)
@@ -77,6 +73,11 @@ def link_files(markdown_files):
         inline_code_map = {INLINE_CODE_PLACEHOLDER.format(i): code for i, code in enumerate(inline_code)}
         for placeholder, code in inline_code_map.items():
             content = content.replace(code, placeholder)
+
+        # Exclude metadata sections, after code blocks and inline code as they may contain yaml code
+        metadata, content = extract_metadata(content)
+        if metadata:
+            content = content.replace(metadata, METADATA_PLACEHOLDER)
 
         # Exclude existing links
         content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
