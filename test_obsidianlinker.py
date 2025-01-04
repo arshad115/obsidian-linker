@@ -143,6 +143,7 @@ class Tests(unittest.TestCase):
             content = f.read()
             self.assertIn("[[Object-Oriented programming]]", content)
             self.assertNotIn("[[Object]]", content)
+            self.assertIn("objects", content)  # Ensure 'objects' is not linked
         self.assertIn(self.file3_path, edited_files)  # Verify the file was edited
 
     def test_exclude_existing_links(self):

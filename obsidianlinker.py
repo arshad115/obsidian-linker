@@ -49,6 +49,9 @@ def link_files(markdown_files):
         title = os.path.splitext(os.path.basename(file))[0]
         titles[title.lower()] = title
 
+    # Sort titles by length in descending order
+    sorted_titles = sorted(titles.items(), key=lambda item: len(item[0]), reverse=True)
+
     edited_files = set()
     total_links_added = 0
     modified_contents = {}
@@ -78,7 +81,7 @@ def link_files(markdown_files):
         # Exclude existing links
         content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
 
-        for title_lower, title in titles.items():
+        for title_lower, title in sorted_titles:
             if title_lower in content_without_links.lower():
                 pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
