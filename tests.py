@@ -185,7 +185,7 @@ class Tests(unittest.TestCase):
         ---
         title: Object-Oriented Programming
         ---
-        This README mentions object-oriented programming.
+        This README is with metadata, mentions object-oriented programming.
         """)
         markdown_files = find_markdown_files(self.temp_dir.name)
         edited_files, total_links_added = link_files(markdown_files)

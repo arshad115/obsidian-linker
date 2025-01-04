@@ -7,6 +7,12 @@ CODE_BLOCK_PLACEHOLDER = "<CODE_BLOCK_{}>"
 METADATA_PLACEHOLDER = "<METADATA_SECTION>"
 INLINE_CODE_PLACEHOLDER = "<INLINE_CODE_{}>"
 
+# Compile regex patterns
+CODE_BLOCK_PATTERN = re.compile(r'```[\s\S]*?```', re.DOTALL | re.MULTILINE)
+INLINE_CODE_PATTERN = re.compile(r'`[^`]*`')
+EXISTING_LINKS_PATTERN = re.compile(r'\[\[.*?\]\]')
+METADATA_PATTERN = re.compile(r'---\s*\n([\s\S]*?)\n\s*---', re.MULTILINE)
+
 def find_markdown_files(directory):
     markdown_files = []
     print(f"Searching for markdown files in directory: {directory}")
@@ -17,6 +23,26 @@ def find_markdown_files(directory):
     print(f"Found {len(markdown_files)} markdown files.")
     return markdown_files
 
+def read_files(markdown_files):
+    file_contents = {}
+    with tqdm(total=len(markdown_files), desc="Reading files") as read_pbar:
+        for file in markdown_files:
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    file_contents[file] = f.read()
+            except UnicodeDecodeError:
+                print(f"Error reading file {file} with UTF-8 encoding.")
+            read_pbar.update(1)
+    return file_contents
+
+def extract_metadata(content):
+    metadata_match = METADATA_PATTERN.search(content)  # Changed from match to search
+    if metadata_match:
+        metadata = metadata_match.group(0)
+        content = content.replace(metadata, '', 1)  # Remove only the first occurrence
+        return metadata, content
+    return '', content
+
 def link_files(markdown_files):
     titles = {}
     for file in markdown_files:
@@ -25,32 +51,33 @@ def link_files(markdown_files):
 
     edited_files = set()
     total_links_added = 0
+    modified_contents = {}
 
-    def process_file(file, pbar):
+    def process_file(file, content):
         nonlocal total_links_added
-        # print(f"Processing file: {file}")
-        with open(file, 'r', encoding='utf-8') as f:
-            content = f.read()
 
         original_content = content
 
         # Exclude metadata sections
-        metadata_sections = re.findall(r'---([\s\S]*?)---', content, re.DOTALL | re.MULTILINE)
-        for section in metadata_sections:
-            content = content.replace(section, METADATA_PLACEHOLDER)
-
+        metadata, content = extract_metadata(content)
+        if metadata:
+            content = content.replace(metadata, METADATA_PLACEHOLDER)
+        
+        print(f"META: {metadata}")
+        print(f"CONTENT: {content}")
+        
         # Exclude code blocks
-        code_blocks = re.findall(r'```[\s\S]*?```', content, re.DOTALL | re.MULTILINE)
+        code_blocks = CODE_BLOCK_PATTERN.findall(content)
         for i, block in enumerate(code_blocks):
             content = content.replace(block, CODE_BLOCK_PLACEHOLDER.format(i))
 
         # Exclude inline code
-        inline_code = re.findall(r'`[^`]*`', content)
+        inline_code = INLINE_CODE_PATTERN.findall(content)
         for i, code in enumerate(inline_code):
             content = content.replace(code, INLINE_CODE_PLACEHOLDER.format(i))
 
         # Exclude existing links
-        content_without_links = re.sub(r'\[\[.*?\]\]', '', content)
+        content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
 
         for title_lower, title in titles.items():
             if title_lower in content_without_links.lower():
@@ -62,20 +89,30 @@ def link_files(markdown_files):
             content = content.replace(INLINE_CODE_PLACEHOLDER.format(i), code, 1)
         for i, block in enumerate(code_blocks):
             content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
-        for section in metadata_sections:
-            content = content.replace(METADATA_PLACEHOLDER, section, 1)
+        
+        if metadata:
+            content = METADATA_PLACEHOLDER + content  # Prepend metadata placeholder
 
         if content != original_content:
-            with open(file, 'w', encoding='utf-8') as f:
-                f.write(content)
+            modified_contents[file] = (content, metadata)  # Store content and metadata
             edited_files.add(file)
             total_links_added += 1
 
-        pbar.update(1)
+    file_contents = read_files(markdown_files)
 
-    with tqdm(total=len(markdown_files), desc="Processing files") as pbar:
-        for file in markdown_files:
-            process_file(file, pbar)
+    with tqdm(total=len(markdown_files), desc="Processing files") as process_pbar:
+        for file, content in file_contents.items():
+            process_file(file, content)
+            process_pbar.update(1)
+
+    with tqdm(total=len(modified_contents), desc="Writing files") as write_pbar:
+        for file, (content, metadata) in modified_contents.items():
+            try:
+                with open(file, 'w', encoding='utf-8') as f:
+                    f.write(content.replace(METADATA_PLACEHOLDER, metadata))  # Restore metadata
+            except IOError as e:
+                print(f"Error writing to file {file}: {e}")
+            write_pbar.update(1)
 
     return edited_files, total_links_added
 
