@@ -47,6 +47,12 @@ pytest
 
 This will execute all the tests and provide you with a summary of the results. Make sure you have all the necessary dependencies installed before running the tests.
 
+## TODO
+
+- [ ] Add support for alias links
+- [ ] Multithreading
+- [ ] Write additional tests for edge cases
+
 ## Contributors
 
 - [Arshad Mehmood](https://github.com/arshad115)
