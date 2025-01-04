@@ -38,6 +38,14 @@ python obsidianlinker.py /path/to/vault/
 ````
 
 Make sure to back up your vault before using this tool, as it can make irreversible edits.
+## Running Tests
+
+To run tests for Obsidian Linker, use the following command:
+```sh
+pytest
+```
+
+This will execute all the tests and provide you with a summary of the results. Make sure you have all the necessary dependencies installed before running the tests.
 
 ## Contributors
 
