@@ -177,6 +177,7 @@ class Tests(unittest.TestCase):
             self.assertIn("[[Object-Oriented Programming]]", content)
             self.assertIn("```\n        This is a code block mentioning Object-Oriented Programming.\n        ```", content)
             self.assertNotIn("[[Object-Oriented Programming]]", content.split("```")[1])  # Ensure no link inside code block
+            self.assertNotIn("CODE_BLOCK", content)
         self.assertIn(self.file3_path, edited_files)  # Verify the file was edited
 
     def test_metadata_intact(self):
@@ -194,6 +195,7 @@ class Tests(unittest.TestCase):
             content = f.read()
             self.assertIn("[[object-oriented programming]]", content)
             self.assertIn("title: Object-Oriented Programming", content)
+            self.assertNotIn("METADATA_SECTION", content)
         self.assertIn(self.file3_path, edited_files)
 
     def test_multiple_links_multiple_lines(self):
@@ -223,6 +225,7 @@ class Tests(unittest.TestCase):
             content = f.read()
             self.assertIn("`object-oriented programming`", content)
             self.assertNotIn("[[object-oriented programming]]", content)
+            self.assertNotIn("INLINE_CODE", content)
 
     def test_links_outside_inline_code(self):
         self.create_file(self.file1_path, "This is a file about object-oriented programming.")
@@ -235,6 +238,7 @@ class Tests(unittest.TestCase):
             content = f.read()
             self.assertIn("`object-oriented programming`", content)
             self.assertIn("[[object-oriented programming]] outside", content)
+            self.assertNotIn("INLINE_CODE", content)
         self.assertIn(self.file3_path, edited_files)  # Verify the file was edited
 
 if __name__ == "__main__":

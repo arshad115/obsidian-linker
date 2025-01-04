@@ -63,9 +63,6 @@ def link_files(markdown_files):
         if metadata:
             content = content.replace(metadata, METADATA_PLACEHOLDER)
         
-        print(f"META: {metadata}")
-        print(f"CONTENT: {content}")
-        
         # Exclude code blocks
         code_blocks = CODE_BLOCK_PATTERN.findall(content)
         for i, block in enumerate(code_blocks):
@@ -73,8 +70,9 @@ def link_files(markdown_files):
 
         # Exclude inline code
         inline_code = INLINE_CODE_PATTERN.findall(content)
-        for i, code in enumerate(inline_code):
-            content = content.replace(code, INLINE_CODE_PLACEHOLDER.format(i))
+        inline_code_map = {INLINE_CODE_PLACEHOLDER.format(i): code for i, code in enumerate(inline_code)}
+        for placeholder, code in inline_code_map.items():
+            content = content.replace(code, placeholder)
 
         # Exclude existing links
         content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
@@ -85,8 +83,8 @@ def link_files(markdown_files):
                 content = pattern.sub(lambda match: f'[[{match.group(0)}]]', content)
 
         # Restore inline code, code blocks, and metadata sections
-        for i, code in enumerate(inline_code):
-            content = content.replace(INLINE_CODE_PLACEHOLDER.format(i), code, 1)
+        for placeholder, code in inline_code_map.items():
+            content = content.replace(placeholder, code)
         for i, block in enumerate(code_blocks):
             content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
         
@@ -94,7 +92,7 @@ def link_files(markdown_files):
             content = METADATA_PLACEHOLDER + content  # Prepend metadata placeholder
 
         if content != original_content:
-            modified_contents[file] = (content, metadata)  # Store content and metadata
+            modified_contents[file] = (content, metadata, inline_code_map, code_blocks)  # Store content, metadata, inline code map, and code blocks
             edited_files.add(file)
             total_links_added += 1
 
@@ -106,8 +104,14 @@ def link_files(markdown_files):
             process_pbar.update(1)
 
     with tqdm(total=len(modified_contents), desc="Writing files") as write_pbar:
-        for file, (content, metadata) in modified_contents.items():
+        for file, (content, metadata, inline_code_map, code_blocks) in modified_contents.items():
             try:
+                # Restore inline code and code blocks
+                for placeholder, code in inline_code_map.items():
+                    content = content.replace(placeholder, code)
+                for i, block in enumerate(code_blocks):
+                    content = content.replace(CODE_BLOCK_PLACEHOLDER.format(i), block, 1)
+                
                 with open(file, 'w', encoding='utf-8') as f:
                     f.write(content.replace(METADATA_PLACEHOLDER, metadata))  # Restore metadata
             except IOError as e:
