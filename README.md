@@ -6,6 +6,13 @@
 
 Obsidian Linker is a tool designed to help you manage and link your notes in Obsidian. It provides various features to enhance your note-taking experience.
 
+## Linking
+
+<p float="left">
+  <img src="images/before.png" alt="Before" width="45%" />
+  <img src="images/after.png" alt="After" width="45%" />
+</p>
+
 ## Features
 
 - Automatic linking of notes
@@ -31,6 +38,8 @@ To install Obsidian Linker, follow these steps:
     ```
 
 ## Usage
+
+![Usage Image](images/usage.png)
 
 To use Obsidian Linker, run the following command:
 ```sh
