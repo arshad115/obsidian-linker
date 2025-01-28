@@ -20,6 +20,24 @@ Obsidian Linker is a tool designed to help you manage and link your notes in Obs
 - Skip links in metadata
 - Skip links in codeblocks, inline code
 
+## Linking Process
+
+1. **Scan Files**: The tool scans all the markdown files in your Obsidian vault.
+2. **Extract Filenames**: It extracts the filenames from the scanned files.
+3. **Match Filenames**: It matches the filenames with the content in other files, ignoring the case.
+4. **Insert Links**: When a match is found, it inserts a Wikilink in the content, preserving the original case of the filename in the link.
+5. **Skip Metadata and Code**: The tool skips adding links in metadata sections and code blocks to avoid unwanted linking.
+
+### Examples
+
+- **Simple Linking**: If a file named `Object-Oriented Programming.md` exists and another file mentions "object-oriented programming", the tool will link it as `[[object-oriented programming]]`.
+- **Preserve Case**: If the mention is "Object-Oriented Programming", the link will be `[[Object-Oriented Programming]]`.
+- **No Links in Code Blocks**: Mentions inside code blocks are ignored.
+- **No Links in Metadata**: Mentions inside metadata sections are ignored.
+- **Multiple Links**: If multiple files are mentioned, each will be linked appropriately.
+- **Partial Matches**: If a file named `Object.md` exists, mentions of "object" will be linked as `[[object]]`, but "objects" will not be linked.
+- **Complex Linking**: If files named `Object-Oriented Programming.md`, `Functional Programming.md`, and `Object.md` exist, and another file mentions "object-oriented programming", "functional programming", and "object", each will be linked as `[[object-oriented programming]]`, `[[functional programming]]`, and `[[object]]` respectively. Note "object" will not be added inside "object-oriented programming".
+
 ## Installation
 
 To install Obsidian Linker, follow these steps:
@@ -44,7 +62,7 @@ To install Obsidian Linker, follow these steps:
 To use Obsidian Linker, run the following command:
 ```sh
 python obsidianlinker.py /path/to/vault/
-````
+```
 
 Make sure to back up your vault before using this tool, as it can make irreversible edits.
 ## Running Tests
