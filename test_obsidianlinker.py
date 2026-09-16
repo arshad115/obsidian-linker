@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 from obsidianlinker import find_markdown_files, link_files
+from obsidian_linker.scan import path_matches_globs
 
 class Tests(unittest.TestCase):
 
@@ -388,6 +389,34 @@ class Tests(unittest.TestCase):
             content = f.read()
             self.assertIn("# Object-Oriented Programming\n", content)
             self.assertIn("[[object-oriented programming]]", content)
+
+    def test_include_and_exclude_globs(self):
+        notes_dir = os.path.join(self.temp_dir.name, 'notes')
+        templates_dir = os.path.join(self.temp_dir.name, 'templates')
+        os.makedirs(notes_dir)
+        os.makedirs(templates_dir)
+        self.create_file(os.path.join(notes_dir, 'Topic.md'), 'topic note')
+        self.create_file(os.path.join(templates_dir, 'Topic.md'), 'template topic')
+        self.create_file(os.path.join(notes_dir, 'Daily.md'), 'daily note')
+        self.create_file(self.file3_path, 'README mentions Topic.')
+
+        markdown_files = find_markdown_files(
+            self.temp_dir.name,
+            include_globs=['notes/**'],
+            exclude_globs=['notes/Daily.md'],
+        )
+        rel_paths = {
+            os.path.relpath(path, self.temp_dir.name).replace(os.sep, '/')
+            for path in markdown_files
+        }
+        self.assertIn('notes/Topic.md', rel_paths)
+        self.assertNotIn('notes/Daily.md', rel_paths)
+        self.assertNotIn('templates/Topic.md', rel_paths)
+
+    def test_path_matches_globs(self):
+        self.assertTrue(path_matches_globs('notes/a.md', ['notes/**'], []))
+        self.assertFalse(path_matches_globs('templates/a.md', ['notes/**'], []))
+        self.assertFalse(path_matches_globs('notes/a.md', [], ['notes/**']))
 
     def test_duplicate_basenames_use_longest_path(self):
         short_dir = os.path.join(self.temp_dir.name, 'a')

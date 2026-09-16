@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "obsidian-linker"
+version = "0.2.0"
+description = "Batch-link note titles in an Obsidian vault as wikilinks"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Arshad Mehmood" }]
+dependencies = [
+    "tqdm>=4.62.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.1.2",
+]
+
+[project.scripts]
+obsidian-linker = "obsidian_linker.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["obsidian_linker*"]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]

@@ -40,29 +40,37 @@ Obsidian Linker is a tool designed to help you manage and link your notes in Obs
 
 ## Installation
 
-To install Obsidian Linker, follow these steps:
+Clone the repository and install the package (recommended):
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/your-username/obsidian-linker.git
-    ```
-2. Navigate to the project directory:
-    ```sh
-    cd obsidian-linker
-    ```
-3. Install the required dependencies:
-    ```sh
-    pip install -r requirements.txt
-    ```
+```sh
+git clone https://github.com/arshad115/obsidian-linker.git
+cd obsidian-linker
+pip install -e ".[dev]"
+```
+
+For a quick script-only install without the console command:
+
+```sh
+pip install -r requirements.txt
+```
 
 ## Usage
 
 ![Usage Image](images/usage.png)
 
-To use Obsidian Linker, run the following command:
+After installation:
+
+```sh
+obsidian-linker /path/to/vault/
+```
+
+Or run the module directly:
+
 ```sh
 python obsidianlinker.py /path/to/vault/
 ```
+
+Use `-v` / `--verbose` for progress bars and scan details (default is quiet except warnings and the summary).
 
 ### Safety options
 
@@ -91,6 +99,12 @@ python obsidianlinker.py /path/to/vault/ --no-self-links
 ```
 
 By default, markdown under `.obsidian`, `.git`, `attachments`, and similar folders is skipped. Add more directory names with `--exclude DIRNAME`, or pass `--no-default-excludes` to scan everything.
+
+Limit which notes are processed with vault-relative globs:
+
+```sh
+obsidian-linker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templates/**'
+```
 
 ### Obsidian-aware linking
 
