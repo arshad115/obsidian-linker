@@ -40,6 +40,16 @@ Obsidian Linker is a tool designed to help you manage and link your notes in Obs
 
 ## Installation
 
+### From PyPI
+
+```sh
+pip install vaultlinker
+vaultlinker /path/to/vault/ --help
+# or: obsidian-linker /path/to/vault/ --help
+```
+
+### From source
+
 Clone the repository and install the package (recommended):
 
 ```sh

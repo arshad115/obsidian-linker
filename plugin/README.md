@@ -16,9 +16,12 @@ Desktop Obsidian plugin that adds `[[wikilinks]]` when note titles (and optional
 
 ## Commands
 
-- **Link note titles in vault** — applies links across the vault.
-- **Preview title links (dry run)** — counts links without writing files.
+- **Link note titles in vault** / **Preview title links (dry run)**
+- **Audit vault links** — pending links, broken wikilinks, zero-backlink notes
+- **Remove managed title links** / **Preview removing managed links**
 
-Settings mirror the CLI defaults (`no self links`, aliases, skip headings, ignored phrases).
+Settings align with the CLI: self-links, aliases, H1 headings, skip headings, min title length, ignored phrases.
 
-The [Python CLI](../README.md) supports incremental runs, globs, and backups for larger workflows.
+CLI-only features: `--incremental`, `--jobs`, path globs, `--output` / `--backup`.
+
+The [Python CLI](../README.md) (`pip install vaultlinker`) supports incremental runs, globs, and backups for larger workflows.

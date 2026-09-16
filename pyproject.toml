@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "obsidian-linker"
+name = "vaultlinker"
 version = "0.4.0"
 description = "Batch-link note titles in an Obsidian vault as wikilinks"
 readme = "README.md"
@@ -22,12 +22,19 @@ dependencies = [
     "tqdm>=4.62.3",
 ]
 
+[project.urls]
+Homepage = "https://github.com/arshad115/obsidian-linker"
+Repository = "https://github.com/arshad115/obsidian-linker"
+Issues = "https://github.com/arshad115/obsidian-linker/issues"
+Documentation = "https://github.com/arshad115/obsidian-linker#readme"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.1.2",
 ]
 
 [project.scripts]
+vaultlinker = "obsidian_linker.cli:main"
 obsidian-linker = "obsidian_linker.cli:main"
 
 [tool.setuptools.packages.find]
