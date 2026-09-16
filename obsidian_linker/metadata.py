@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from obsidian_linker.constants import FIRST_H1_PATTERN, METADATA_PATTERN
 from obsidian_linker.models import LinkPhrase
@@ -72,14 +72,26 @@ def format_wikilink(canonical: str, matched: str) -> str:
     return f'[[{canonical}|{matched}]]'
 
 
+def phrase_is_ignored(phrase: str, ignore_phrases: Set[str], min_title_length: int) -> bool:
+    if not phrase.strip():
+        return True
+    if len(phrase.strip()) < min_title_length:
+        return True
+    return phrase.strip().lower() in ignore_phrases
+
+
 def register_phrase(
     phrase_map: Dict[str, LinkPhrase],
     warnings: List[str],
     phrase: str,
     canonical: str,
     source_file: str,
+    *,
+    ignore_phrases: Optional[Set[str]] = None,
+    min_title_length: int = 1,
 ) -> None:
-    if not phrase.strip():
+    ignore_phrases = ignore_phrases or set()
+    if phrase_is_ignored(phrase, ignore_phrases, min_title_length):
         return
 
     key = phrase.lower()
@@ -107,7 +119,10 @@ def build_link_phrases(
     *,
     use_aliases: bool = True,
     use_headings: bool = False,
+    ignore_phrases: Optional[Set[str]] = None,
+    min_title_length: int = 1,
 ) -> Tuple[List[LinkPhrase], List[str]]:
+    ignore_phrases = ignore_phrases or set()
     warnings: List[str] = []
     phrase_map: Dict[str, LinkPhrase] = {}
 
@@ -131,7 +146,15 @@ def build_link_phrases(
         canonical = note_canonical_title(file)
         title_lower = canonical.lower()
         if basename_winners.get(title_lower) == file:
-            register_phrase(phrase_map, warnings, canonical, canonical, file)
+            register_phrase(
+                phrase_map,
+                warnings,
+                canonical,
+                canonical,
+                file,
+                ignore_phrases=ignore_phrases,
+                min_title_length=min_title_length,
+            )
 
         metadata_match = METADATA_PATTERN.search(file_contents[file])
         metadata = metadata_match.group(0) if metadata_match else ''
@@ -141,12 +164,28 @@ def build_link_phrases(
 
         if use_aliases:
             for alias in parse_aliases_from_front_matter(metadata):
-                register_phrase(phrase_map, warnings, alias, canonical, file)
+                register_phrase(
+                    phrase_map,
+                    warnings,
+                    alias,
+                    canonical,
+                    file,
+                    ignore_phrases=ignore_phrases,
+                    min_title_length=min_title_length,
+                )
 
         if use_headings:
             heading = parse_first_h1(body)
             if heading:
-                register_phrase(phrase_map, warnings, heading, canonical, file)
+                register_phrase(
+                    phrase_map,
+                    warnings,
+                    heading,
+                    canonical,
+                    file,
+                    ignore_phrases=ignore_phrases,
+                    min_title_length=min_title_length,
+                )
 
     phrases = sorted(phrase_map.values(), key=lambda item: len(item.phrase_lower), reverse=True)
     return phrases, warnings

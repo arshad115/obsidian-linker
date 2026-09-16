@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-linker",
+  "name": "Obsidian Linker",
+  "version": "0.3.0",
+  "minAppVersion": "1.4.0",
+  "description": "Add wikilinks when note titles are mentioned in your vault.",
+  "author": "Arshad Mehmood",
+  "authorUrl": "https://github.com/arshad115/obsidian-linker",
+  "isDesktopOnly": true
+}

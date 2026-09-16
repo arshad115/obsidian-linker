@@ -170,5 +170,9 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Obsidian plugin build
+plugin/node_modules/
+plugin/main.js
+
 # macOS
 .DS_Store

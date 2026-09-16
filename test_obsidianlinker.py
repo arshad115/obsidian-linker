@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from obsidianlinker import find_markdown_files, link_files
 from obsidian_linker.scan import path_matches_globs
+from obsidian_linker.state import default_state_path, files_to_process
 
 class Tests(unittest.TestCase):
 
@@ -417,6 +418,82 @@ class Tests(unittest.TestCase):
         self.assertTrue(path_matches_globs('notes/a.md', ['notes/**'], []))
         self.assertFalse(path_matches_globs('templates/a.md', ['notes/**'], []))
         self.assertFalse(path_matches_globs('notes/a.md', [], ['notes/**']))
+
+    def test_ignore_phrase(self):
+        self.create_file(self.file1_path, "This is a file about object-oriented programming.")
+        self.create_file(self.file3_path, "This README mentions object-oriented programming.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files, ignore_phrases={'readme'})
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("[[object-oriented programming]]", content)
+            self.assertNotIn("[[README]]", content)
+
+    def test_min_title_length(self):
+        self.create_file(self.file4_path, "Object note.")
+        self.create_file(self.file3_path, "This README mentions object.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files, min_title_length=10)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            self.assertNotIn("[[object]]", f.read())
+
+    def test_incremental_skips_unchanged_files(self):
+        self.create_file(self.file1_path, "This is a file about object-oriented programming.")
+        self.create_file(self.file3_path, "This README mentions object-oriented programming.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files, vault_root=self.temp_dir.name, incremental=True)
+
+        state_path = default_state_path(self.temp_dir.name)
+        self.assertTrue(os.path.isfile(state_path))
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            linked = f.read()
+
+        result = self.run_link(
+            markdown_files,
+            vault_root=self.temp_dir.name,
+            incremental=True,
+        )
+        self.assertEqual(result.total_links_added, 0)
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            self.assertEqual(f.read(), linked)
+
+    def test_incremental_reprocesses_all_when_note_added(self):
+        self.create_file(self.file1_path, "This is a file about object-oriented programming.")
+        self.create_file(self.file3_path, "This README mentions object-oriented programming.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files, vault_root=self.temp_dir.name, incremental=True)
+
+        self.create_file(self.file2_path, "Functional programming note.")
+        self.create_file(self.file3_path, "This README mentions object-oriented programming and functional programming.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        result = self.run_link(markdown_files, vault_root=self.temp_dir.name, incremental=True)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("[[functional programming]]", content)
+        self.assertGreater(result.total_links_added, 0)
+
+    def test_files_to_process_detects_changes(self):
+        stable = os.path.join(self.temp_dir.name, 'stable.md')
+        self.create_file(stable, 'stable')
+        stable_mtime = os.path.getmtime(stable)
+        state = {
+            'version': 1,
+            'paths': [os.path.abspath(stable)],
+            'files': {os.path.abspath(stable): stable_mtime},
+        }
+        self.assertEqual(files_to_process([stable], state, True), set())
+        self.assertIsNone(
+            files_to_process([stable, os.path.join(self.temp_dir.name, 'missing.md')], state, True)
+        )
 
     def test_duplicate_basenames_use_longest_path(self):
         short_dir = os.path.join(self.temp_dir.name, 'a')

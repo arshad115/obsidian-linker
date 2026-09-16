@@ -4,12 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "obsidian-linker"
-version = "0.2.0"
+version = "0.3.0"
 description = "Batch-link note titles in an Obsidian vault as wikilinks"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [{ name = "Arshad Mehmood" }]
+keywords = ["obsidian", "markdown", "wikilinks", "notes"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
 dependencies = [
     "tqdm>=4.62.3",
 ]

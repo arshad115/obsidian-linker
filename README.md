@@ -115,6 +115,25 @@ obsidian-linker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templa
 - **`--use-headings`**: Also link phrases taken from each note's first `# H1` heading.
 - **`--no-aliases`**: Only use filenames, not front matter aliases.
 
+### Incremental and blocklist
+
+Re-run only notes that changed since the last successful incremental run (state is stored in `.obsidian/obsidian-linker-state.json`). If notes are added or removed, every note is processed again so new titles can link correctly.
+
+```sh
+obsidian-linker /path/to/vault/ --incremental
+```
+
+Skip noisy short titles or specific words:
+
+```sh
+obsidian-linker /path/to/vault/ --ignore-phrase README --min-title-length 4
+obsidian-linker /path/to/vault/ --ignore-file ./linker-ignore.txt
+```
+
+## Obsidian plugin
+
+A community plugin lives in [`plugin/`](plugin/). Build it with `npm install && npm run build` inside that folder, then copy `main.js` and `manifest.json` into `.obsidian/plugins/obsidian-linker/`. See [plugin/README.md](plugin/README.md).
+
 Make sure to back up your vault before using this tool, as in-place runs can make irreversible edits unless you use `--dry-run` or `--output`.
 ## Running Tests
 
@@ -130,7 +149,7 @@ This will execute all the tests and provide you with a summary of the results. M
 - [x] Add support for alias links
 - [ ] Multithreading
 - [ ] Write additional tests for edge cases
-- [ ] Make it into a plugin for Obsidian
+- [x] Make it into a plugin for Obsidian
 
 ## Contributors
 

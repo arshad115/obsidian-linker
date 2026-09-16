@@ -1,8 +1,10 @@
 import argparse
 import os
 
+from obsidian_linker.ignore import load_ignore_phrases
 from obsidian_linker.link import link_files
 from obsidian_linker.scan import find_markdown_files, resolve_exclude_dir_names
+from obsidian_linker.state import default_state_path
 
 
 def print_dry_run_report(changes: list) -> None:
@@ -85,6 +87,35 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not skip .obsidian, .git, and other default folders",
     )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Only process notes changed since the last run (reprocesses all notes when notes are added or removed)",
+    )
+    parser.add_argument(
+        "--state-file",
+        metavar="PATH",
+        help="Path for incremental state (default: <vault>/.obsidian/obsidian-linker-state.json)",
+    )
+    parser.add_argument(
+        "--ignore-phrase",
+        action="append",
+        default=[],
+        metavar="TEXT",
+        help="Skip linking this phrase (repeatable; case-insensitive)",
+    )
+    parser.add_argument(
+        "--ignore-file",
+        metavar="PATH",
+        help="File with phrases to skip, one per line (# comments allowed)",
+    )
+    parser.add_argument(
+        "--min-title-length",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Do not link phrases shorter than N characters (default: 1)",
+    )
     return parser
 
 
@@ -98,6 +129,13 @@ def main(argv=None) -> int:
         extra_excludes=args.exclude,
     )
     output_dir = os.path.abspath(os.path.expanduser(args.output)) if args.output else None
+    state_path = (
+        os.path.abspath(os.path.expanduser(args.state_file))
+        if args.state_file
+        else (default_state_path(directory) if args.incremental else None)
+    )
+    ignore_file = os.path.expanduser(args.ignore_file) if args.ignore_file else None
+    ignore_phrases = load_ignore_phrases(args.ignore_phrase, ignore_file)
 
     markdown_files = find_markdown_files(
         directory,
@@ -117,6 +155,10 @@ def main(argv=None) -> int:
         use_headings=args.use_headings,
         skip_headings=not args.link_headings,
         show_progress=args.verbose,
+        incremental=args.incremental,
+        state_path=state_path,
+        ignore_phrases=ignore_phrases,
+        min_title_length=args.min_title_length,
     )
 
     if result.warnings:

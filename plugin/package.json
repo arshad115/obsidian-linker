@@ -1,0 +1,19 @@
+{
+  "name": "obsidian-linker",
+  "version": "0.3.0",
+  "description": "Obsidian plugin for automatic title linking",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.20.0",
+    "obsidian": "^1.5.7",
+    "typescript": "^5.3.3"
+  }
+}
