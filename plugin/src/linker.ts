@@ -325,12 +325,14 @@ export function scanWikilinks(
   if (metadata) working = working.replace("<METADATA_SECTION>", "");
 
   const found: { line: number; wikilink: string; target: string }[] = [];
-  for (const match of working.matchAll(WIKILINK_CAPTURE)) {
+  const wikilinkRe = new RegExp(WIKILINK_CAPTURE.source, WIKILINK_CAPTURE.flags);
+  let match: RegExpExecArray | null;
+  while ((match = wikilinkRe.exec(working)) !== null) {
     const inner = match[1];
     if (inner === undefined) continue;
     const [target] = parseWikilinkInner(inner);
     found.push({
-      line: lineNumberAt(working, match.index ?? 0),
+      line: lineNumberAt(working, match.index),
       wikilink: match[0],
       target,
     });

@@ -1,19 +1,24 @@
 {
   "name": "obsidian-linker",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Obsidian plugin for automatic title linking",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production"
+    "build": "node esbuild.config.mjs production",
+    "lint": "cd .. && eslint plugin/src --config plugin/eslint.config.mjs"
   },
   "keywords": [],
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.11.0",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.20.0",
+    "eslint": "^10.10.0",
+    "eslint-plugin-obsidianmd": "^0.4.2",
     "obsidian": "^1.5.7",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.70.0"
   }
 }

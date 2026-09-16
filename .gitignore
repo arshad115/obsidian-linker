@@ -174,5 +174,9 @@ cython_debug/
 plugin/node_modules/
 plugin/main.js
 
+# Root-level npm (lint uses plugin/node_modules from repo root)
+/node_modules/
+/package-lock.json
+
 # macOS
 .DS_Store

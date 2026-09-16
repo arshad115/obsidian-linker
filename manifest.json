@@ -1,7 +1,7 @@
 {
   "id": "vault-linker",
   "name": "Vault Linker",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "minAppVersion": "1.4.0",
   "description": "Add, audit, and remove wikilinks when note titles and aliases appear in your vault.",
   "author": "Arshad Mehmood",

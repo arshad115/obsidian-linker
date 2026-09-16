@@ -2,6 +2,8 @@
 
 ## PyPI (`vaultlinker`)
 
+**Live:** https://pypi.org/project/vaultlinker/
+
 The installable package name is **`vaultlinker`**. The console commands are **`vaultlinker`** and **`obsidian-linker`** (same CLI).
 
 ### One-time setup

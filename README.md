@@ -1,6 +1,7 @@
 # Vault Linker
 
 [![Run Tests](https://github.com/arshad115/obsidian-linker/actions/workflows/run-tests.yml/badge.svg)](https://github.com/arshad115/obsidian-linker/actions/workflows/run-tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/vaultlinker)](https://pypi.org/project/vaultlinker/)
 
 ## Overview
 
@@ -41,6 +42,8 @@ Obsidian Linker is a tool designed to help you manage and link your notes in Obs
 ## Installation
 
 ### From PyPI
+
+Package: **[vaultlinker on PyPI](https://pypi.org/project/vaultlinker/)**
 
 ```sh
 pip install vaultlinker

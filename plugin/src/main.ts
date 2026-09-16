@@ -43,6 +43,33 @@ const DEFAULT_SETTINGS: LinkerPluginSettings = {
   ignorePhrases: "README",
 };
 
+const SETTING_COPY = {
+  noSelfLinks: {
+    name: "No self links",
+    desc: "Do not link a note title inside its own file.",
+  },
+  useAliases: {
+    name: "Use aliases",
+    desc: "Use YAML alias / aliases fields from front matter.",
+  },
+  useHeadings: {
+    name: "Use h1 headings",
+    desc: "Also treat each note's first # heading as a link phrase.",
+  },
+  skipHeadings: {
+    name: "Skip headings",
+    desc: "Do not add links on Markdown heading lines.",
+  },
+  minTitleLength: {
+    name: "Minimum title length",
+    desc: "Ignore link phrases shorter than this length.",
+  },
+  ignorePhrases: {
+    name: "Ignored phrases",
+    desc: "One phrase per line (case-insensitive).",
+  },
+} as const satisfies Record<SettingsKey, { name: string; desc: string }>;
+
 export default class ObsidianLinkerPlugin extends Plugin {
   settings: LinkerPluginSettings = DEFAULT_SETTINGS;
 
@@ -286,65 +313,60 @@ class AuditReportModal extends Modal {
 }
 
 class LinkerSettingTab extends PluginSettingTab {
-  plugin: ObsidianLinkerPlugin;
-
   constructor(app: App, plugin: ObsidianLinkerPlugin) {
     super(app, plugin);
-    this.plugin = plugin;
+  }
+
+  private linker(): ObsidianLinkerPlugin {
+    return this.plugin as ObsidianLinkerPlugin;
   }
 
   getSettingDefinitions(): SettingDefinitionItem<SettingsKey>[] {
     return [
       {
-        type: "group",
-        heading: "Vault Linker",
-        items: [
-          {
-            name: "No self links",
-            desc: "Do not link a note title inside its own file.",
-            control: { type: "toggle", key: "noSelfLinks", defaultValue: true },
-          },
-          {
-            name: "Use aliases",
-            desc: "Use YAML alias / aliases fields from front matter.",
-            control: { type: "toggle", key: "useAliases", defaultValue: true },
-          },
-          {
-            name: "Use H1 headings",
-            desc: "Also treat each note's first # heading as a link phrase.",
-            control: { type: "toggle", key: "useHeadings", defaultValue: false },
-          },
-          {
-            name: "Skip headings",
-            desc: "Do not add links on markdown heading lines.",
-            control: { type: "toggle", key: "skipHeadings", defaultValue: true },
-          },
-          {
-            name: "Minimum title length",
-            desc: "Ignore link phrases shorter than this length.",
-            control: {
-              type: "number",
-              key: "minTitleLength",
-              defaultValue: 1,
-              placeholder: "1",
-            },
-          },
-          {
-            name: "Ignored phrases",
-            desc: "One phrase per line (case-insensitive).",
-            control: {
-              type: "textarea",
-              key: "ignorePhrases",
-              defaultValue: "README",
-            },
-          },
-        ],
+        name: SETTING_COPY.noSelfLinks.name,
+        desc: SETTING_COPY.noSelfLinks.desc,
+        control: { type: "toggle", key: "noSelfLinks", defaultValue: true },
+      },
+      {
+        name: SETTING_COPY.useAliases.name,
+        desc: SETTING_COPY.useAliases.desc,
+        control: { type: "toggle", key: "useAliases", defaultValue: true },
+      },
+      {
+        name: SETTING_COPY.useHeadings.name,
+        desc: SETTING_COPY.useHeadings.desc,
+        control: { type: "toggle", key: "useHeadings", defaultValue: false },
+      },
+      {
+        name: SETTING_COPY.skipHeadings.name,
+        desc: SETTING_COPY.skipHeadings.desc,
+        control: { type: "toggle", key: "skipHeadings", defaultValue: true },
+      },
+      {
+        name: SETTING_COPY.minTitleLength.name,
+        desc: SETTING_COPY.minTitleLength.desc,
+        control: {
+          type: "number",
+          key: "minTitleLength",
+          defaultValue: 1,
+          placeholder: "1",
+        },
+      },
+      {
+        name: SETTING_COPY.ignorePhrases.name,
+        desc: SETTING_COPY.ignorePhrases.desc,
+        control: {
+          type: "textarea",
+          key: "ignorePhrases",
+          defaultValue: "README",
+        },
       },
     ];
   }
 
   setControlValue(key: string, value: unknown): Promise<void> {
-    const settings = this.plugin.settings;
+    const settings = this.linker().settings;
     switch (key) {
       case "noSelfLinks":
         settings.noSelfLinks = value as boolean;
@@ -367,66 +389,58 @@ class LinkerSettingTab extends PluginSettingTab {
       default:
         break;
     }
-    return this.plugin.saveSettings();
+    return this.linker().saveSettings();
   }
 
   display(): void {
     const { containerEl } = this;
+    const settings = this.linker().settings;
     containerEl.empty();
-    new Setting(containerEl).setName("Vault Linker").setHeading();
 
     new Setting(containerEl)
-      .setName("No self links")
-      .setDesc("Do not link a note title inside its own file.")
+      .setName(SETTING_COPY.noSelfLinks.name)
+      .setDesc(SETTING_COPY.noSelfLinks.desc)
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.noSelfLinks)
-          .onChange((value) => {
-            void this.setControlValue("noSelfLinks", value);
-          })
+        toggle.setValue(settings.noSelfLinks).onChange((value: boolean) => {
+          void this.setControlValue("noSelfLinks", value);
+        })
       );
 
     new Setting(containerEl)
-      .setName("Use aliases")
-      .setDesc("Use YAML alias / aliases fields from front matter.")
+      .setName(SETTING_COPY.useAliases.name)
+      .setDesc(SETTING_COPY.useAliases.desc)
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.useAliases)
-          .onChange((value) => {
-            void this.setControlValue("useAliases", value);
-          })
+        toggle.setValue(settings.useAliases).onChange((value: boolean) => {
+          void this.setControlValue("useAliases", value);
+        })
       );
 
     new Setting(containerEl)
-      .setName("Use H1 headings")
-      .setDesc("Also treat each note's first # heading as a link phrase.")
+      .setName(SETTING_COPY.useHeadings.name)
+      .setDesc(SETTING_COPY.useHeadings.desc)
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.useHeadings)
-          .onChange((value) => {
-            void this.setControlValue("useHeadings", value);
-          })
+        toggle.setValue(settings.useHeadings).onChange((value: boolean) => {
+          void this.setControlValue("useHeadings", value);
+        })
       );
 
     new Setting(containerEl)
-      .setName("Skip headings")
-      .setDesc("Do not add links on markdown heading lines.")
+      .setName(SETTING_COPY.skipHeadings.name)
+      .setDesc(SETTING_COPY.skipHeadings.desc)
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.skipHeadings)
-          .onChange((value) => {
-            void this.setControlValue("skipHeadings", value);
-          })
+        toggle.setValue(settings.skipHeadings).onChange((value: boolean) => {
+          void this.setControlValue("skipHeadings", value);
+        })
       );
 
     new Setting(containerEl)
-      .setName("Minimum title length")
-      .setDesc("Ignore link phrases shorter than this length.")
+      .setName(SETTING_COPY.minTitleLength.name)
+      .setDesc(SETTING_COPY.minTitleLength.desc)
       .addText((text) =>
         text
           .setPlaceholder("1")
-          .setValue(String(this.plugin.settings.minTitleLength))
-          .onChange((value) => {
+          .setValue(String(settings.minTitleLength))
+          .onChange((value: string) => {
             const parsed = Number.parseInt(value, 10);
             void this.setControlValue(
               "minTitleLength",
@@ -436,14 +450,12 @@ class LinkerSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Ignored phrases")
-      .setDesc("One phrase per line (case-insensitive).")
+      .setName(SETTING_COPY.ignorePhrases.name)
+      .setDesc(SETTING_COPY.ignorePhrases.desc)
       .addTextArea((text) =>
-        text
-          .setValue(this.plugin.settings.ignorePhrases)
-          .onChange((value) => {
-            void this.setControlValue("ignorePhrases", value);
-          })
+        text.setValue(settings.ignorePhrases).onChange((value: string) => {
+          void this.setControlValue("ignorePhrases", value);
+        })
       );
   }
 }
