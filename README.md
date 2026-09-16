@@ -72,6 +72,13 @@ python obsidianlinker.py /path/to/vault/
 
 Use `-v` / `--verbose` for progress bars and scan details (default is quiet except warnings and the summary).
 
+Parallel processing (read, link, and write phases):
+
+```sh
+obsidian-linker /path/to/vault/ --jobs 8
+obsidian-linker /path/to/vault/ --jobs 0   # automatic worker count
+```
+
 ### Safety options
 
 Preview changes without writing files:
@@ -147,7 +154,7 @@ This will execute all the tests and provide you with a summary of the results. M
 ## TODO
 
 - [x] Add support for alias links
-- [ ] Multithreading
+- [x] Multithreading
 - [ ] Write additional tests for edge cases
 - [x] Make it into a plugin for Obsidian
 

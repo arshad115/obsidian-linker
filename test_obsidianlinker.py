@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from obsidianlinker import find_markdown_files, link_files
 from obsidian_linker.scan import path_matches_globs
+from obsidian_linker.parallel import resolve_worker_count
 from obsidian_linker.state import default_state_path, files_to_process
 
 class Tests(unittest.TestCase):
@@ -494,6 +495,42 @@ class Tests(unittest.TestCase):
         self.assertIsNone(
             files_to_process([stable, os.path.join(self.temp_dir.name, 'missing.md')], state, True)
         )
+
+    def create_file_at(self, path, content):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as handle:
+            handle.write(content)
+
+    def test_parallel_jobs_matches_sequential(self):
+        readme_body = (
+            "This README mentions object-oriented programming and functional programming."
+        )
+        with tempfile.TemporaryDirectory() as seq_dir, tempfile.TemporaryDirectory() as par_dir:
+            for base in (seq_dir, par_dir):
+                self.create_file_at(
+                    os.path.join(base, "Object-Oriented Programming.md"),
+                    "This is a file about object-oriented programming.",
+                )
+                self.create_file_at(
+                    os.path.join(base, "Functional Programming.md"),
+                    "This is a file about functional programming.",
+                )
+                self.create_file_at(os.path.join(base, "README.md"), readme_body)
+
+            seq_files = find_markdown_files(seq_dir)
+            par_files = find_markdown_files(par_dir)
+            self.run_link(seq_files, jobs=1)
+            self.run_link(par_files, jobs=4)
+
+            with open(os.path.join(seq_dir, "README.md"), 'r', encoding='utf-8') as handle:
+                sequential_content = handle.read()
+            with open(os.path.join(par_dir, "README.md"), 'r', encoding='utf-8') as handle:
+                parallel_content = handle.read()
+            self.assertEqual(sequential_content, parallel_content)
+
+    def test_resolve_worker_count(self):
+        self.assertGreaterEqual(resolve_worker_count(0), 1)
+        self.assertEqual(resolve_worker_count(3), 3)
 
     def test_duplicate_basenames_use_longest_path(self):
         short_dir = os.path.join(self.temp_dir.name, 'a')

@@ -116,6 +116,13 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Do not link phrases shorter than N characters (default: 1)",
     )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Parallel workers for read/process/write (default: 1). Use 0 for automatic (CPU count, max 32)",
+    )
     return parser
 
 
@@ -159,6 +166,7 @@ def main(argv=None) -> int:
         state_path=state_path,
         ignore_phrases=ignore_phrases,
         min_title_length=args.min_title_length,
+        jobs=args.jobs,
     )
 
     if result.warnings:
