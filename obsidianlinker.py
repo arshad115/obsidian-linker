@@ -3,19 +3,25 @@ import os
 import re
 import shutil
 from dataclasses import dataclass, field
-from typing import Iterable, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from tqdm import tqdm
 
 CODE_BLOCK_PLACEHOLDER = "<CODE_BLOCK_{}>"
 METADATA_PLACEHOLDER = "<METADATA_SECTION>"
 INLINE_CODE_PLACEHOLDER = "<INLINE_CODE_{}>"
+EMBED_PLACEHOLDER = "<EMBED_{}>"
+MARKDOWN_LINK_PLACEHOLDER = "<MD_LINK_{}>"
+HEADING_LINE_PLACEHOLDER = "<HEADING_LINE_{}>"
 
-# Compile regex patterns
 CODE_BLOCK_PATTERN = re.compile(r'```[\s\S]*?```', re.DOTALL | re.MULTILINE)
 INLINE_CODE_PATTERN = re.compile(r'`[^`]*`')
-EXISTING_LINKS_PATTERN = re.compile(r'\[\[.*?\]\]')
+EMBED_PATTERN = re.compile(r'!\[\[(?:[^\]|]+\|)?[^\]]+\]\]')
+MARKDOWN_LINK_PATTERN = re.compile(r'\[[^\]]+\]\([^)]+\)')
+EXISTING_LINKS_PATTERN = re.compile(r'(?<!!)\[\[(?:[^\]|]+\|)?[^\]]+\]\]')
 METADATA_PATTERN = re.compile(r'---\s*\n([\s\S]*?)\n\s*---', re.MULTILINE)
+HEADING_LINE_PATTERN = re.compile(r'^(\s{0,3}#{1,6}\s.+)$', re.MULTILINE)
+FIRST_H1_PATTERN = re.compile(r'^#\s+(.+?)\s*$', re.MULTILINE)
 
 DEFAULT_EXCLUDE_DIR_NAMES = frozenset({
     '.obsidian',
@@ -35,10 +41,28 @@ DEFAULT_EXCLUDE_DIR_NAMES = frozenset({
 
 
 @dataclass
+class NoteTarget:
+    canonical: str
+    source_file: str
+
+
+@dataclass
+class LinkPhrase:
+    phrase: str
+    canonical: str
+    source_file: str
+
+    @property
+    def phrase_lower(self) -> str:
+        return self.phrase.lower()
+
+
+@dataclass
 class LinkChange:
     file: str
     line: int
     matched_text: str
+    wikilink: str
 
 
 @dataclass
@@ -46,6 +70,7 @@ class LinkResult:
     edited_files: Set[str] = field(default_factory=set)
     total_links_added: int = 0
     changes: list = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
 
 
 def resolve_exclude_dir_names(
@@ -83,10 +108,9 @@ def find_markdown_files(
 
 def read_files(markdown_files, show_progress: bool = True):
     file_contents = {}
-    iterator = markdown_files
     if show_progress:
         read_pbar = tqdm(total=len(markdown_files), desc="Reading files")
-    for file in iterator:
+    for file in markdown_files:
         try:
             with open(file, 'r', encoding='utf-8') as f:
                 file_contents[file] = f.read()
@@ -99,6 +123,152 @@ def read_files(markdown_files, show_progress: bool = True):
     return file_contents
 
 
+def strip_yaml_scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+        return value[1:-1]
+    return value
+
+
+def front_matter_inner(metadata: str) -> str:
+    inner = metadata.strip()
+    if inner.startswith('---'):
+        inner = inner[3:]
+    if inner.endswith('---'):
+        inner = inner[:-3]
+    return inner.strip('\n')
+
+
+def parse_aliases_from_front_matter(metadata: str) -> List[str]:
+    if not metadata:
+        return []
+
+    aliases: List[str] = []
+    lines = front_matter_inner(metadata).splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        alias_match = re.match(r'^alias:\s*(.+)$', line)
+        if alias_match:
+            aliases.append(strip_yaml_scalar(alias_match.group(1)))
+            i += 1
+            continue
+
+        inline_match = re.match(r'^aliases:\s*\[(.*)\]\s*$', line)
+        if inline_match:
+            for part in inline_match.group(1).split(','):
+                if part.strip():
+                    aliases.append(strip_yaml_scalar(part))
+            i += 1
+            continue
+
+        if re.match(r'^aliases:\s*$', line):
+            i += 1
+            while i < len(lines) and re.match(r'^\s+-\s+', lines[i]):
+                aliases.append(strip_yaml_scalar(lines[i].split('-', 1)[1]))
+                i += 1
+            continue
+
+        i += 1
+
+    return aliases
+
+
+def parse_first_h1(content: str) -> Optional[str]:
+    match = FIRST_H1_PATTERN.search(content)
+    return match.group(1).strip() if match else None
+
+
+def note_canonical_title(file_path: str) -> str:
+    return os.path.splitext(os.path.basename(file_path))[0]
+
+
+def format_wikilink(canonical: str, matched: str) -> str:
+    if matched.casefold() == canonical.casefold():
+        return f'[[{matched}]]'
+    return f'[[{canonical}|{matched}]]'
+
+
+def register_phrase(
+    phrase_map: Dict[str, LinkPhrase],
+    warnings: List[str],
+    phrase: str,
+    canonical: str,
+    source_file: str,
+) -> None:
+    if not phrase.strip():
+        return
+
+    key = phrase.lower()
+    new_entry = LinkPhrase(phrase=phrase, canonical=canonical, source_file=source_file)
+    existing = phrase_map.get(key)
+    if existing is None:
+        phrase_map[key] = new_entry
+        return
+
+    if existing.source_file == source_file and existing.canonical == canonical:
+        return
+
+    warnings.append(
+        f"Duplicate link phrase '{phrase}' for notes "
+        f"'{existing.canonical}' ({existing.source_file}) and "
+        f"'{canonical}' ({source_file}); using '{canonical}'."
+    )
+    if len(source_file) >= len(existing.source_file):
+        phrase_map[key] = new_entry
+
+
+def build_link_phrases(
+    markdown_files: List[str],
+    file_contents: Dict[str, str],
+    *,
+    use_aliases: bool = True,
+    use_headings: bool = False,
+) -> Tuple[List[LinkPhrase], List[str]]:
+    warnings: List[str] = []
+    phrase_map: Dict[str, LinkPhrase] = {}
+
+    by_title_lower: Dict[str, List[str]] = {}
+    for file in markdown_files:
+        title_lower = note_canonical_title(file).lower()
+        by_title_lower.setdefault(title_lower, []).append(file)
+
+    basename_winners: Dict[str, str] = {}
+    for title_lower, paths in by_title_lower.items():
+        winner = max(paths, key=len)
+        basename_winners[title_lower] = winner
+        if len(paths) > 1:
+            paths_display = ', '.join(sorted(paths))
+            warnings.append(
+                f"Duplicate note title '{note_canonical_title(winner)}': {paths_display}; "
+                f"using '{winner}' as the link target."
+            )
+
+    for file in markdown_files:
+        canonical = note_canonical_title(file)
+        title_lower = canonical.lower()
+        if basename_winners.get(title_lower) == file:
+            register_phrase(phrase_map, warnings, canonical, canonical, file)
+
+        metadata_match = METADATA_PATTERN.search(file_contents[file])
+        metadata = metadata_match.group(0) if metadata_match else ''
+        body = file_contents[file]
+        if metadata:
+            body = body.replace(metadata, '', 1)
+
+        if use_aliases:
+            for alias in parse_aliases_from_front_matter(metadata):
+                register_phrase(phrase_map, warnings, alias, canonical, file)
+
+        if use_headings:
+            heading = parse_first_h1(body)
+            if heading:
+                register_phrase(phrase_map, warnings, heading, canonical, file)
+
+    phrases = sorted(phrase_map.values(), key=lambda item: len(item.phrase_lower), reverse=True)
+    return phrases, warnings
+
+
 def extract_metadata(content):
     metadata_match = METADATA_PATTERN.search(content)
     if metadata_match:
@@ -108,11 +278,60 @@ def extract_metadata(content):
     return '', content
 
 
-def finalize_modified_content(content, metadata, inline_code_map, code_block_map):
+def protect_regions(content: str, skip_headings: bool) -> Tuple[str, dict, dict, dict, dict, dict]:
+    code_blocks = CODE_BLOCK_PATTERN.findall(content)
+    code_block_map = {CODE_BLOCK_PLACEHOLDER.format(i): block for i, block in enumerate(code_blocks)}
+    for placeholder, block in code_block_map.items():
+        content = content.replace(block, placeholder)
+
+    inline_code = INLINE_CODE_PATTERN.findall(content)
+    inline_code_map = {INLINE_CODE_PLACEHOLDER.format(i): code for i, code in enumerate(inline_code)}
+    for placeholder, code in inline_code_map.items():
+        content = content.replace(code, placeholder)
+
+    embeds = EMBED_PATTERN.findall(content)
+    embed_map = {EMBED_PLACEHOLDER.format(i): embed for i, embed in enumerate(embeds)}
+    for placeholder, embed in embed_map.items():
+        content = content.replace(embed, placeholder)
+
+    md_links = MARKDOWN_LINK_PATTERN.findall(content)
+    md_link_map = {MARKDOWN_LINK_PLACEHOLDER.format(i): link for i, link in enumerate(md_links)}
+    for placeholder, link in md_link_map.items():
+        content = content.replace(link, placeholder)
+
+    heading_map = {}
+    if skip_headings:
+        heading_lines = HEADING_LINE_PATTERN.findall(content)
+        heading_map = {HEADING_LINE_PLACEHOLDER.format(i): line for i, line in enumerate(heading_lines)}
+        for placeholder, line in heading_map.items():
+            content = content.replace(line, placeholder)
+
+    return content, code_block_map, inline_code_map, embed_map, md_link_map, heading_map
+
+
+def restore_regions(
+    content: str,
+    code_block_map: dict,
+    inline_code_map: dict,
+    embed_map: dict,
+    md_link_map: dict,
+    heading_map: dict,
+) -> str:
     for placeholder, code in inline_code_map.items():
         content = content.replace(placeholder, code)
     for placeholder, block in code_block_map.items():
         content = content.replace(placeholder, block)
+    for placeholder, embed in embed_map.items():
+        content = content.replace(placeholder, embed)
+    for placeholder, link in md_link_map.items():
+        content = content.replace(placeholder, link)
+    for placeholder, line in heading_map.items():
+        content = content.replace(placeholder, line)
+    return content
+
+
+def finalize_modified_content(content, metadata, inline_code_map, code_block_map, embed_map, md_link_map, heading_map):
+    content = restore_regions(content, code_block_map, inline_code_map, embed_map, md_link_map, heading_map)
     if metadata:
         content = content.replace(METADATA_PLACEHOLDER, metadata)
     return content
@@ -130,6 +349,9 @@ def link_files(
     backup: bool = False,
     output_dir: Optional[str] = None,
     no_self_links: bool = False,
+    use_aliases: bool = True,
+    use_headings: bool = False,
+    skip_headings: bool = True,
     show_progress: bool = True,
 ) -> LinkResult:
     if output_dir and dry_run:
@@ -137,29 +359,23 @@ def link_files(
     if output_dir and backup:
         raise ValueError("Cannot use --backup together with --output (originals are not modified)")
 
-    titles = {}
-    for file in markdown_files:
-        title = os.path.splitext(os.path.basename(file))[0]
-        titles[title.lower()] = title
+    file_contents = read_files(markdown_files, show_progress=show_progress)
+    link_phrases, index_warnings = build_link_phrases(
+        markdown_files,
+        file_contents,
+        use_aliases=use_aliases,
+        use_headings=use_headings,
+    )
 
-    sorted_titles = sorted(titles.items(), key=lambda item: len(item[0]), reverse=True)
-
-    result = LinkResult()
+    result = LinkResult(warnings=list(index_warnings))
     modified_contents = {}
 
     def process_file(file, content):
         original_content = content
-        file_title_lower = os.path.splitext(os.path.basename(file))[0].lower()
 
-        code_blocks = CODE_BLOCK_PATTERN.findall(content)
-        code_block_map = {CODE_BLOCK_PLACEHOLDER.format(i): block for i, block in enumerate(code_blocks)}
-        for placeholder, block in code_block_map.items():
-            content = content.replace(block, placeholder)
-
-        inline_code = INLINE_CODE_PATTERN.findall(content)
-        inline_code_map = {INLINE_CODE_PLACEHOLDER.format(i): code for i, code in enumerate(inline_code)}
-        for placeholder, code in inline_code_map.items():
-            content = content.replace(code, placeholder)
+        content, code_block_map, inline_code_map, embed_map, md_link_map, heading_map = protect_regions(
+            content, skip_headings=skip_headings
+        )
 
         metadata, content = extract_metadata(content)
         if metadata:
@@ -168,34 +384,44 @@ def link_files(
         content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
 
         links_added_in_file = 0
-        for title_lower, title in sorted_titles:
-            if no_self_links and title_lower == file_title_lower:
+        for entry in link_phrases:
+            if no_self_links and entry.source_file == file:
                 continue
-            if title_lower not in content_without_links.lower():
+            if entry.phrase_lower not in content_without_links.lower():
                 continue
-            pattern = re.compile(rf'(?<!\[\[)\b{re.escape(title)}\b(?!\]\])', re.IGNORECASE)
 
-            def replace_match(match, _file=file):
+            pattern = re.compile(
+                rf'(?<!\[\[)\b{re.escape(entry.phrase)}\b(?!\]\])',
+                re.IGNORECASE,
+            )
+
+            def replace_match(match, _file=file, _entry=entry):
                 nonlocal links_added_in_file
                 links_added_in_file += 1
                 matched = match.group(0)
+                wikilink = format_wikilink(_entry.canonical, matched)
                 line = line_number_at(content, match.start())
-                result.changes.append(LinkChange(file=_file, line=line, matched_text=matched))
-                return f'[[{matched}]]'
+                result.changes.append(
+                    LinkChange(file=_file, line=line, matched_text=matched, wikilink=wikilink)
+                )
+                return wikilink
 
             content = pattern.sub(replace_match, content)
 
-        for placeholder, code in inline_code_map.items():
-            content = content.replace(placeholder, code)
-        for placeholder, block in code_block_map.items():
-            content = content.replace(placeholder, block)
+        content = restore_regions(content, code_block_map, inline_code_map, embed_map, md_link_map, heading_map)
 
-        if content != original_content:
-            modified_contents[file] = (content, metadata, inline_code_map, code_block_map)
+        if links_added_in_file > 0:
+            modified_contents[file] = (
+                content,
+                metadata,
+                inline_code_map,
+                code_block_map,
+                embed_map,
+                md_link_map,
+                heading_map,
+            )
             result.edited_files.add(file)
             result.total_links_added += links_added_in_file
-
-    file_contents = read_files(markdown_files, show_progress=show_progress)
 
     if show_progress:
         process_pbar = tqdm(total=len(markdown_files), desc="Processing files")
@@ -217,9 +443,11 @@ def link_files(
     if show_progress:
         write_pbar = tqdm(total=len(modified_contents), desc="Writing files")
     for file, stored in modified_contents.items():
-        content, metadata, inline_code_map, code_block_map = stored
+        content, metadata, inline_code_map, code_block_map, embed_map, md_link_map, heading_map = stored
         try:
-            content = finalize_modified_content(content, metadata, inline_code_map, code_block_map)
+            content = finalize_modified_content(
+                content, metadata, inline_code_map, code_block_map, embed_map, md_link_map, heading_map
+            )
 
             if output_dir:
                 if vault_root is None:
@@ -246,7 +474,12 @@ def link_files(
 
 def print_dry_run_report(changes: list) -> None:
     for change in changes:
-        print(f"{change.file}:{change.line}: {change.matched_text} -> [[{change.matched_text}]]")
+        print(f"{change.file}:{change.line}: {change.matched_text} -> {change.wikilink}")
+
+
+def print_warnings(warnings: List[str]) -> None:
+    for warning in warnings:
+        print(f"Warning: {warning}")
 
 
 def main():
@@ -271,6 +504,21 @@ def main():
         "--no-self-links",
         action="store_true",
         help="Do not link a note's title inside the file that bears that title",
+    )
+    parser.add_argument(
+        "--no-aliases",
+        action="store_true",
+        help="Do not use YAML alias / aliases fields from front matter",
+    )
+    parser.add_argument(
+        "--use-headings",
+        action="store_true",
+        help="Also treat each note's first H1 heading as a link phrase",
+    )
+    parser.add_argument(
+        "--link-headings",
+        action="store_true",
+        help="Add links inside markdown heading lines (skipped by default)",
     )
     parser.add_argument(
         "--exclude",
@@ -301,7 +549,13 @@ def main():
         backup=args.backup,
         output_dir=output_dir,
         no_self_links=args.no_self_links,
+        use_aliases=not args.no_aliases,
+        use_headings=args.use_headings,
+        skip_headings=not args.link_headings,
     )
+
+    if result.warnings:
+        print_warnings(result.warnings)
 
     if args.dry_run and result.changes:
         print_dry_run_report(result.changes)

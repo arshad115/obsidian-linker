@@ -332,5 +332,77 @@ class Tests(unittest.TestCase):
             self.assertIn("object-oriented programming", f.read())
             self.assertNotIn("[[object-oriented programming]]", f.read())
 
+    def test_alias_links_to_canonical_note(self):
+        self.create_file(
+            self.file1_path,
+            "---\naliases:\n  - OOP\n---\nNote about OOP.",
+        )
+        self.create_file(self.file3_path, "This README discusses OOP.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            self.assertIn("[[Object-Oriented Programming|OOP]]", f.read())
+
+    def test_no_links_inside_embeds(self):
+        self.create_file(self.file1_path, "Note body.")
+        self.create_file(
+            self.file3_path,
+            "See ![[Object-Oriented Programming]] for details.",
+        )
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            self.assertEqual("See ![[Object-Oriented Programming]] for details.", f.read())
+
+    def test_no_links_inside_markdown_links(self):
+        self.create_file(self.file1_path, "Note body.")
+        self.create_file(
+            self.file3_path,
+            "Read [Object-Oriented Programming](https://example.com) here.",
+        )
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            self.assertEqual(
+                "Read [Object-Oriented Programming](https://example.com) here.",
+                f.read(),
+            )
+
+    def test_skip_heading_lines_by_default(self):
+        self.create_file(self.file1_path, "Note body.")
+        self.create_file(
+            self.file3_path,
+            "# Object-Oriented Programming\n\nBody mentions object-oriented programming.",
+        )
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("# Object-Oriented Programming\n", content)
+            self.assertIn("[[object-oriented programming]]", content)
+
+    def test_duplicate_basenames_use_longest_path(self):
+        short_dir = os.path.join(self.temp_dir.name, 'a')
+        long_dir = os.path.join(self.temp_dir.name, 'a', 'nested', 'deep')
+        os.makedirs(long_dir)
+        self.create_file(os.path.join(short_dir, 'Topic.md'), 'short path note')
+        self.create_file(os.path.join(long_dir, 'Topic.md'), 'long path note')
+        self.create_file(self.file3_path, "This README mentions Topic.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        result = self.run_link(markdown_files)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as f:
+            self.assertIn("[[Topic]]", f.read())
+        self.assertTrue(any('Duplicate note title' in w for w in result.warnings))
+
 if __name__ == "__main__":
     unittest.main()

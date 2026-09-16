@@ -92,6 +92,15 @@ python obsidianlinker.py /path/to/vault/ --no-self-links
 
 By default, markdown under `.obsidian`, `.git`, `attachments`, and similar folders is skipped. Add more directory names with `--exclude DIRNAME`, or pass `--no-default-excludes` to scan everything.
 
+### Obsidian-aware linking
+
+- **Aliases**: YAML `alias` / `aliases` in front matter are link phrases; matches use `[[Note Title|alias]]` when the visible text differs from the note title.
+- **Embeds & markdown links**: Text inside `![[...]]` and `[label](url)` is not linked.
+- **Headings**: Text on `# heading` lines is skipped unless you pass `--link-headings`.
+- **Duplicate filenames**: If two notes share the same filename in different folders, the tool warns and uses the note with the longest path as the link target for that title.
+- **`--use-headings`**: Also link phrases taken from each note's first `# H1` heading.
+- **`--no-aliases`**: Only use filenames, not front matter aliases.
+
 Make sure to back up your vault before using this tool, as in-place runs can make irreversible edits unless you use `--dry-run` or `--output`.
 ## Running Tests
 
@@ -104,7 +113,7 @@ This will execute all the tests and provide you with a summary of the results. M
 
 ## TODO
 
-- [ ] Add support for alias links
+- [x] Add support for alias links
 - [ ] Multithreading
 - [ ] Write additional tests for edge cases
 - [ ] Make it into a plugin for Obsidian
