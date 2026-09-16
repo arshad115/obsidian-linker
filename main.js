@@ -564,7 +564,7 @@ var LinkerSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Obsidian Linker" });
+    containerEl.createEl("h2", { text: "Vault Linker" });
     new import_obsidian.Setting(containerEl).setName("No self links").setDesc("Do not link a note title inside its own file.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.noSelfLinks).onChange(async (value) => {
         this.plugin.settings.noSelfLinks = value;

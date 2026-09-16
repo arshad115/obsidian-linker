@@ -40,7 +40,7 @@ Submit at **[community.obsidian.md](https://community.obsidian.md)** (developer 
 ### Prerequisites
 
 - A GitHub release whose **tag matches `manifest.json` `version`** (e.g. tag `0.4.0`, not `v0.4.0`) with **`manifest.json`**, **`main.js`**, and **`versions.json`** attached.
-- Plugin id **`obsidian-linker`** must be unique in the directory.
+- Plugin id **`vault-linker`** (IDs must not contain `obsidian`; see [Manifest](https://docs.obsidian.md/Reference/Manifest)).
 
 ### Submit
 
@@ -49,8 +49,8 @@ Submit at **[community.obsidian.md](https://community.obsidian.md)** (developer 
 
 ```json
 {
-  "id": "obsidian-linker",
-  "name": "Obsidian Linker",
+  "id": "vault-linker",
+  "name": "Vault Linker",
   "author": "Arshad Mehmood",
   "description": "Add, audit, and remove wikilinks when note titles and aliases appear in your vault.",
   "repo": "arshad115/obsidian-linker"
@@ -67,4 +67,4 @@ cd plugin && npm install && npm run build
 
 Copy `main.js`, `manifest.json`, and `versions.json` into:
 
-`YourVault/.obsidian/plugins/obsidian-linker/`
+`YourVault/.obsidian/plugins/vault-linker/`

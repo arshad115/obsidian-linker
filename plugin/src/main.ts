@@ -275,7 +275,7 @@ class LinkerSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Obsidian Linker" });
+    containerEl.createEl("h2", { text: "Vault Linker" });
 
     new Setting(containerEl)
       .setName("No self links")

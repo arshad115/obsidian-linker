@@ -11,7 +11,7 @@ Desktop Obsidian plugin that adds `[[wikilinks]]` when note titles (and optional
    npm run build
    ```
 2. Copy `main.js`, `manifest.json`, and `versions.json` from the **repo root** (build with `npm run build` in this folder) into:
-   `VaultFolder/.obsidian/plugins/obsidian-linker/`
+   `VaultFolder/.obsidian/plugins/vault-linker/`
 3. Enable **Obsidian Linker** under **Settings → Community plugins**.
 
 ## Commands
