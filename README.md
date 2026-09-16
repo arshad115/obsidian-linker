@@ -1,4 +1,4 @@
-# Obsidian Linker
+# Vault Linker
 
 [![Run Tests](https://github.com/arshad115/obsidian-linker/actions/workflows/run-tests.yml/badge.svg)](https://github.com/arshad115/obsidian-linker/actions/workflows/run-tests.yml)
 

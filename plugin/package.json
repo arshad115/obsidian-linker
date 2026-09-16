@@ -1,6 +1,6 @@
 {
   "name": "obsidian-linker",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Obsidian plugin for automatic title linking",
   "main": "main.js",
   "scripts": {

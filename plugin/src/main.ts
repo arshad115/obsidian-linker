@@ -5,9 +5,12 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
+  SettingDefinitionItem,
+  TFile,
 } from "obsidian";
 import {
   auditVault,
+  AuditReport,
   buildManagedLinkKeys,
   buildPhrases,
   linkContent,
@@ -22,6 +25,13 @@ interface LinkerPluginSettings {
   skipHeadings: boolean;
   minTitleLength: number;
   ignorePhrases: string;
+}
+
+type SettingsKey = keyof LinkerPluginSettings;
+
+interface FilePayload {
+  path: string;
+  content: string;
 }
 
 const DEFAULT_SETTINGS: LinkerPluginSettings = {
@@ -42,38 +52,49 @@ export default class ObsidianLinkerPlugin extends Plugin {
     this.addCommand({
       id: "link-vault-titles",
       name: "Link note titles in vault",
-      callback: () => this.promptAndRun("link", false),
+      callback: () => {
+        this.promptAndRun("link", false);
+      },
     });
 
     this.addCommand({
       id: "link-vault-titles-dry-run",
       name: "Preview title links (dry run)",
-      callback: () => this.promptAndRun("link", true),
+      callback: () => {
+        this.promptAndRun("link", true);
+      },
     });
 
     this.addCommand({
       id: "audit-vault-links",
       name: "Audit vault links",
-      callback: () => this.runAudit(),
+      callback: () => {
+        void this.runAudit();
+      },
     });
 
     this.addCommand({
       id: "unlink-vault-titles",
       name: "Remove managed title links",
-      callback: () => this.promptAndRun("unlink", false),
+      callback: () => {
+        this.promptAndRun("unlink", false);
+      },
     });
 
     this.addCommand({
       id: "unlink-vault-titles-dry-run",
       name: "Preview removing managed links",
-      callback: () => this.promptAndRun("unlink", true),
+      callback: () => {
+        this.promptAndRun("unlink", true);
+      },
     });
 
     this.addSettingTab(new LinkerSettingTab(this.app, this));
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = (await this.loadData()) as Partial<LinkerPluginSettings> | null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
   }
 
   async saveSettings() {
@@ -96,9 +117,9 @@ export default class ObsidianLinkerPlugin extends Plugin {
     };
   }
 
-  async loadFilePayload() {
+  async loadFilePayload(): Promise<{ files: TFile[]; filePayload: FilePayload[] }> {
     const files = this.app.vault.getMarkdownFiles();
-    const filePayload = [];
+    const filePayload: FilePayload[] = [];
     for (const file of files) {
       filePayload.push({
         path: file.path,
@@ -110,8 +131,8 @@ export default class ObsidianLinkerPlugin extends Plugin {
 
   promptAndRun(mode: "link" | "unlink", dryRun: boolean) {
     const modal = new ConfirmLinkerModal(this.app, mode, dryRun, () => {
-      if (mode === "link") this.runLinker(dryRun);
-      else this.runUnlink(dryRun);
+      if (mode === "link") void this.runLinker(dryRun);
+      else void this.runUnlink(dryRun);
     });
     modal.open();
   }
@@ -205,7 +226,7 @@ class ConfirmLinkerModal extends Modal {
         ? "This will report how many managed title/alias links would be removed."
         : "This removes wikilinks created by the same rules as Link note titles. Other links are kept.",
     };
-    contentEl.createEl("h2", { text: titles[this.mode] });
+    new Setting(contentEl).setName(titles[this.mode]).setHeading();
     contentEl.createEl("p", { text: bodies[this.mode] });
     contentEl.createEl("button", { text: "Continue", type: "button" }).onclick = () => {
       this.close();
@@ -221,13 +242,13 @@ class ConfirmLinkerModal extends Modal {
 }
 
 class AuditReportModal extends Modal {
-  constructor(app: App, private readonly report: ReturnType<typeof auditVault>) {
+  constructor(app: App, private readonly report: AuditReport) {
     super(app);
   }
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Vault link audit" });
+    new Setting(contentEl).setName("Vault link audit").setHeading();
     contentEl.createEl("p", {
       text: `Pending links: ${this.report.pendingLinks} in ${this.report.pendingFiles} notes`,
     });
@@ -251,7 +272,7 @@ class AuditReportModal extends Modal {
       text: `Notes with zero incoming links: ${this.report.zeroBacklinkNotes.length}`,
     });
     if (this.report.topLinkedTitles.length > 0) {
-      contentEl.createEl("h3", { text: "Most linked titles" });
+      new Setting(contentEl).setName("Most linked titles").setHeading();
       const top = contentEl.createEl("ul");
       for (const entry of this.report.topLinkedTitles) {
         top.createEl("li", { text: `${entry.title} (${entry.count})` });
@@ -272,10 +293,87 @@ class LinkerSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
+  getSettingDefinitions(): SettingDefinitionItem<SettingsKey>[] {
+    return [
+      {
+        type: "group",
+        heading: "Vault Linker",
+        items: [
+          {
+            name: "No self links",
+            desc: "Do not link a note title inside its own file.",
+            control: { type: "toggle", key: "noSelfLinks", defaultValue: true },
+          },
+          {
+            name: "Use aliases",
+            desc: "Use YAML alias / aliases fields from front matter.",
+            control: { type: "toggle", key: "useAliases", defaultValue: true },
+          },
+          {
+            name: "Use H1 headings",
+            desc: "Also treat each note's first # heading as a link phrase.",
+            control: { type: "toggle", key: "useHeadings", defaultValue: false },
+          },
+          {
+            name: "Skip headings",
+            desc: "Do not add links on markdown heading lines.",
+            control: { type: "toggle", key: "skipHeadings", defaultValue: true },
+          },
+          {
+            name: "Minimum title length",
+            desc: "Ignore link phrases shorter than this length.",
+            control: {
+              type: "number",
+              key: "minTitleLength",
+              defaultValue: 1,
+              placeholder: "1",
+            },
+          },
+          {
+            name: "Ignored phrases",
+            desc: "One phrase per line (case-insensitive).",
+            control: {
+              type: "textarea",
+              key: "ignorePhrases",
+              defaultValue: "README",
+            },
+          },
+        ],
+      },
+    ];
+  }
+
+  setControlValue(key: string, value: unknown): Promise<void> {
+    const settings = this.plugin.settings;
+    switch (key) {
+      case "noSelfLinks":
+        settings.noSelfLinks = value as boolean;
+        break;
+      case "useAliases":
+        settings.useAliases = value as boolean;
+        break;
+      case "useHeadings":
+        settings.useHeadings = value as boolean;
+        break;
+      case "skipHeadings":
+        settings.skipHeadings = value as boolean;
+        break;
+      case "minTitleLength":
+        settings.minTitleLength = value as number;
+        break;
+      case "ignorePhrases":
+        settings.ignorePhrases = value as string;
+        break;
+      default:
+        break;
+    }
+    return this.plugin.saveSettings();
+  }
+
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Vault Linker" });
+    new Setting(containerEl).setName("Vault Linker").setHeading();
 
     new Setting(containerEl)
       .setName("No self links")
@@ -283,9 +381,8 @@ class LinkerSettingTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.noSelfLinks)
-          .onChange(async (value) => {
-            this.plugin.settings.noSelfLinks = value;
-            await this.plugin.saveSettings();
+          .onChange((value) => {
+            void this.setControlValue("noSelfLinks", value);
           })
       );
 
@@ -295,9 +392,8 @@ class LinkerSettingTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.useAliases)
-          .onChange(async (value) => {
-            this.plugin.settings.useAliases = value;
-            await this.plugin.saveSettings();
+          .onChange((value) => {
+            void this.setControlValue("useAliases", value);
           })
       );
 
@@ -307,9 +403,8 @@ class LinkerSettingTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.useHeadings)
-          .onChange(async (value) => {
-            this.plugin.settings.useHeadings = value;
-            await this.plugin.saveSettings();
+          .onChange((value) => {
+            void this.setControlValue("useHeadings", value);
           })
       );
 
@@ -319,9 +414,8 @@ class LinkerSettingTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.skipHeadings)
-          .onChange(async (value) => {
-            this.plugin.settings.skipHeadings = value;
-            await this.plugin.saveSettings();
+          .onChange((value) => {
+            void this.setControlValue("skipHeadings", value);
           })
       );
 
@@ -332,10 +426,12 @@ class LinkerSettingTab extends PluginSettingTab {
         text
           .setPlaceholder("1")
           .setValue(String(this.plugin.settings.minTitleLength))
-          .onChange(async (value) => {
+          .onChange((value) => {
             const parsed = Number.parseInt(value, 10);
-            this.plugin.settings.minTitleLength = Number.isFinite(parsed) ? parsed : 1;
-            await this.plugin.saveSettings();
+            void this.setControlValue(
+              "minTitleLength",
+              Number.isFinite(parsed) ? parsed : 1
+            );
           })
       );
 
@@ -345,9 +441,8 @@ class LinkerSettingTab extends PluginSettingTab {
       .addTextArea((text) =>
         text
           .setValue(this.plugin.settings.ignorePhrases)
-          .onChange(async (value) => {
-            this.plugin.settings.ignorePhrases = value;
-            await this.plugin.saveSettings();
+          .onChange((value) => {
+            void this.setControlValue("ignorePhrases", value);
           })
       );
   }

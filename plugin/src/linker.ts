@@ -320,13 +320,14 @@ export function scanWikilinks(
   content: string,
   skipHeadings: boolean
 ): { line: number; wikilink: string; target: string }[] {
-  const [protectedContent, metadata, _stashed] = prepareForLinking(content, skipHeadings);
+  const [protectedContent, metadata] = prepareForLinking(content, skipHeadings);
   let working = protectedContent;
   if (metadata) working = working.replace("<METADATA_SECTION>", "");
 
   const found: { line: number; wikilink: string; target: string }[] = [];
   for (const match of working.matchAll(WIKILINK_CAPTURE)) {
     const inner = match[1];
+    if (inner === undefined) continue;
     const [target] = parseWikilinkInner(inner);
     found.push({
       line: lineNumberAt(working, match.index ?? 0),
