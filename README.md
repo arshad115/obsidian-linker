@@ -167,7 +167,7 @@ obsidian-linker /path/to/vault/ --ignore-file ./linker-ignore.txt
 
 ## Obsidian plugin
 
-A community plugin lives in [`plugin/`](plugin/). Build it with `npm install && npm run build` inside that folder, then copy `main.js` and `manifest.json` into `.obsidian/plugins/obsidian-linker/`. See [plugin/README.md](plugin/README.md).
+A community plugin lives in [`plugin/`](plugin/) (source); `manifest.json`, `versions.json`, and `main.js` are at the **repo root** for Obsidian’s directory scanner. Build with `cd plugin && npm install && npm run build`, then submit via [community.obsidian.md](https://community.obsidian.md). See [plugin/README.md](plugin/README.md) and [PUBLISHING.md](PUBLISHING.md).
 
 Make sure to back up your vault before using this tool, as in-place runs can make irreversible edits unless you use `--dry-run` or `--output`.
 ## Running Tests

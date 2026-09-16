@@ -33,11 +33,13 @@ vaultlinker --help
 
 ## Obsidian Community Plugins
 
-The plugin is **not** listed in the community catalog until you submit it.
+Submit at **[community.obsidian.md](https://community.obsidian.md)** (developer dashboard). Pull requests to `obsidianmd/obsidian-releases` are no longer accepted.
+
+`manifest.json`, `versions.json`, and built `main.js` live at the **repository root** so the directory scanner can find them.
 
 ### Prerequisites
 
-- A GitHub release for tag `v0.4.0` (or newer) with **`manifest.json`**, **`main.js`**, and **`versions.json`** attached.
+- A GitHub release whose **tag matches `manifest.json` `version`** (e.g. tag `0.4.0`, not `v0.4.0`) with **`manifest.json`**, **`main.js`**, and **`versions.json`** attached.
 - Plugin id **`obsidian-linker`** must be unique in the directory.
 
 ### Submit

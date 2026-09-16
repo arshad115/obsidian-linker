@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags:
+      - "[0-9]*.[0-9]*.[0-9]*"
       - "v*"
   workflow_dispatch:
 
@@ -48,7 +49,7 @@ jobs:
       - name: Package plugin assets
         run: |
           mkdir -p dist-plugin
-          cp plugin/manifest.json plugin/main.js plugin/versions.json dist-plugin/
+          cp manifest.json main.js versions.json dist-plugin/
       - name: Attach to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
