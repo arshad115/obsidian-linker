@@ -64,7 +64,35 @@ To use Obsidian Linker, run the following command:
 python obsidianlinker.py /path/to/vault/
 ```
 
-Make sure to back up your vault before using this tool, as it can make irreversible edits.
+### Safety options
+
+Preview changes without writing files:
+
+```sh
+python obsidianlinker.py /path/to/vault/ --dry-run
+```
+
+Write linked copies to another directory (vault files stay unchanged):
+
+```sh
+python obsidianlinker.py /path/to/vault/ --output /path/to/linked-vault/
+```
+
+Create a `.bak` copy of each file before overwriting it in the vault:
+
+```sh
+python obsidianlinker.py /path/to/vault/ --backup
+```
+
+Skip linking a note's title inside its own file (e.g. do not turn `README` into `[[README]]` in `README.md`):
+
+```sh
+python obsidianlinker.py /path/to/vault/ --no-self-links
+```
+
+By default, markdown under `.obsidian`, `.git`, `attachments`, and similar folders is skipped. Add more directory names with `--exclude DIRNAME`, or pass `--no-default-excludes` to scan everything.
+
+Make sure to back up your vault before using this tool, as in-place runs can make irreversible edits unless you use `--dry-run` or `--output`.
 ## Running Tests
 
 To run tests for Obsidian Linker, use the following command:
