@@ -122,6 +122,24 @@ obsidian-linker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templa
 - **`--use-headings`**: Also link phrases taken from each note's first `# H1` heading.
 - **`--no-aliases`**: Only use filenames, not front matter aliases.
 
+### Audit and unlink
+
+Audit the vault (no file changes):
+
+```sh
+obsidian-linker /path/to/vault/ --audit
+obsidian-linker /path/to/vault/ --audit -v   # include pending link details
+```
+
+Reports pending links (same rules as a dry run), broken `[[wikilinks]]` with no matching note, notes with zero incoming links, and the most-linked titles.
+
+Remove wikilinks that this tool would create (title and alias forms only; manual links to other targets are kept):
+
+```sh
+obsidian-linker /path/to/vault/ --unlink --dry-run
+obsidian-linker /path/to/vault/ --unlink --backup
+```
+
 ### Incremental and blocklist
 
 Re-run only notes that changed since the last successful incremental run (state is stored in `.obsidian/obsidian-linker-state.json`). If notes are added or removed, every note is processed again so new titles can link correctly.

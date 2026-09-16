@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 from obsidianlinker import find_markdown_files, link_files
+from obsidian_linker.audit import audit_vault, unlink_files
 from obsidian_linker.scan import path_matches_globs
 from obsidian_linker.parallel import resolve_worker_count
 from obsidian_linker.state import default_state_path, files_to_process
@@ -531,6 +532,53 @@ class Tests(unittest.TestCase):
     def test_resolve_worker_count(self):
         self.assertGreaterEqual(resolve_worker_count(0), 1)
         self.assertEqual(resolve_worker_count(3), 3)
+
+    def test_audit_reports_broken_and_pending_links(self):
+        self.create_file(self.file1_path, "Note about OOP.")
+        self.create_file(self.file3_path, "Mentions object-oriented programming and [[Missing Note]].")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        audit = audit_vault(markdown_files)
+
+        self.assertEqual(len(audit.broken_links), 1)
+        self.assertEqual(audit.broken_links[0].target, "Missing Note")
+        self.assertGreater(audit.pending_link_count, 0)
+
+    def test_audit_zero_backlinks(self):
+        self.create_file(self.file1_path, "Standalone note.")
+        self.create_file(self.file3_path, "No wikilinks here.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        audit = audit_vault(markdown_files)
+
+        self.assertIn("Object-Oriented Programming", audit.zero_backlink_notes)
+        self.assertIn("README", audit.zero_backlink_notes)
+
+    def test_unlink_removes_managed_links(self):
+        self.create_file(
+            self.file1_path,
+            "---\naliases:\n  - OOP\n---\nNote.",
+        )
+        self.create_file(self.file3_path, "Discusses [[Object-Oriented Programming|OOP]] and [[Missing]].")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        result = unlink_files(markdown_files)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as handle:
+            content = handle.read()
+        self.assertIn("Discusses OOP and [[Missing]].", content)
+        self.assertGreater(result.total_links_removed, 0)
+
+    def test_unlink_dry_run_does_not_modify(self):
+        self.create_file(self.file1_path, "Note.")
+        original = "See [[Object-Oriented Programming]] here."
+        self.create_file(self.file3_path, original)
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        unlink_files(markdown_files, dry_run=True)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as handle:
+            self.assertEqual(handle.read(), original)
 
     def test_duplicate_basenames_use_longest_path(self):
         short_dir = os.path.join(self.temp_dir.name, 'a')

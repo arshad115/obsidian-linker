@@ -1,6 +1,7 @@
 import argparse
 import os
 
+from obsidian_linker.audit import audit_vault, print_audit_report, print_unlink_report, unlink_files
 from obsidian_linker.ignore import load_ignore_phrases
 from obsidian_linker.link import link_files
 from obsidian_linker.scan import find_markdown_files, resolve_exclude_dir_names
@@ -29,7 +30,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Report links that would be added without modifying files",
+        help="Report links that would be added without modifying files (also applies to --unlink)",
+    )
+    parser.add_argument(
+        "--audit",
+        action="store_true",
+        help="Audit vault: pending links, broken wikilinks, notes with zero backlinks",
+    )
+    parser.add_argument(
+        "--unlink",
+        action="store_true",
+        help="Remove wikilinks that match this tool's title/alias link rules",
     )
     parser.add_argument(
         "--backup",
@@ -130,6 +141,11 @@ def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    if args.audit and args.unlink:
+        parser.error("Use either --audit or --unlink, not both")
+    if args.audit and (args.output or args.backup or args.incremental):
+        parser.error("--audit does not support --output, --backup, or --incremental")
+
     directory = os.path.abspath(os.path.expanduser(args.directory))
     exclude_dir_names = resolve_exclude_dir_names(
         use_default_excludes=not args.no_default_excludes,
@@ -151,6 +167,50 @@ def main(argv=None) -> int:
         exclude_globs=args.exclude_glob,
         verbose=args.verbose,
     )
+
+    if args.audit:
+        audit = audit_vault(
+            markdown_files,
+            no_self_links=args.no_self_links,
+            use_aliases=not args.no_aliases,
+            use_headings=args.use_headings,
+            skip_headings=not args.link_headings,
+            ignore_phrases=ignore_phrases,
+            min_title_length=args.min_title_length,
+            show_progress=args.verbose,
+            jobs=args.jobs,
+        )
+        if audit.warnings:
+            print_warnings(audit.warnings)
+        print_audit_report(audit, verbose=args.verbose)
+        return 0
+
+    if args.unlink:
+        unlink_result = unlink_files(
+            markdown_files,
+            vault_root=directory,
+            dry_run=args.dry_run,
+            backup=args.backup,
+            output_dir=output_dir,
+            no_self_links=args.no_self_links,
+            use_aliases=not args.no_aliases,
+            use_headings=args.use_headings,
+            skip_headings=not args.link_headings,
+            show_progress=args.verbose,
+            ignore_phrases=ignore_phrases,
+            min_title_length=args.min_title_length,
+            jobs=args.jobs,
+        )
+        if unlink_result.warnings:
+            print_warnings(unlink_result.warnings)
+        if args.dry_run and unlink_result.changes:
+            print_unlink_report(unlink_result.changes)
+        print(f"Total links removed: {unlink_result.total_links_removed}")
+        print(f"Total files edited: {len(unlink_result.edited_files)}")
+        if args.dry_run:
+            print("(dry run — no files were modified)")
+        return 0
+
     result = link_files(
         markdown_files,
         vault_root=directory,
