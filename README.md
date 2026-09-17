@@ -23,6 +23,8 @@ Vault Linker links note titles and YAML aliases across your Obsidian vault as wi
 - Dry-run, backup, output copy, globs, and incremental state
 - **Audit** broken links, pending links, and backlink stats; **unlink** managed title links
 - Skips metadata, code blocks, embeds, and markdown links (CLI + plugin)
+- Optional **case-sensitive** matching and **first link per phrase** per note
+- Path **include/exclude globs** (CLI flags; plugin settings)
 
 ## Linking Process
 
@@ -172,7 +174,12 @@ Skip noisy short titles or specific words:
 ```sh
 vaultlinker /path/to/vault/ --ignore-phrase README --min-title-length 4
 vaultlinker /path/to/vault/ --ignore-file ./linker-ignore.txt
+vaultlinker /path/to/vault/ --case-sensitive --first-link-per-phrase
 ```
+
+### CI / GitHub Actions
+
+See [docs/github-actions.md](docs/github-actions.md) and the example workflow [`.github/workflows/vault-linker-example.yml`](.github/workflows/vault-linker-example.yml).
 
 ## Obsidian plugin
 

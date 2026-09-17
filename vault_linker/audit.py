@@ -85,6 +85,8 @@ def audit_vault(
     min_title_length: int = 1,
     show_progress: bool = False,
     jobs: int = 1,
+    case_sensitive: bool = False,
+    first_link_per_phrase: bool = False,
 ) -> AuditResult:
     worker_count = resolve_worker_count(jobs)
     file_contents = read_files(markdown_files, show_progress=show_progress, jobs=worker_count)
@@ -96,7 +98,7 @@ def audit_vault(
         ignore_phrases=ignore_phrases,
         min_title_length=min_title_length,
     )
-    compiled = compile_link_phrases(link_phrases)
+    compiled = compile_link_phrases(link_phrases, case_sensitive=case_sensitive)
     known_titles = known_note_titles(markdown_files)
 
     result = AuditResult(warnings=list(warnings))
@@ -112,6 +114,8 @@ def audit_vault(
             compiled,
             no_self_links=no_self_links,
             skip_headings=skip_headings,
+            case_sensitive=case_sensitive,
+            first_link_per_phrase=first_link_per_phrase,
         )
 
     for process_result in map_parallel(

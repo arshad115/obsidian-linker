@@ -5,6 +5,10 @@ export interface LinkerPluginSettings {
   skipHeadings: boolean;
   minTitleLength: number;
   ignorePhrases: string;
+  caseSensitive: boolean;
+  firstLinkPerPhrase: boolean;
+  includeGlobs: string;
+  excludeGlobs: string;
 }
 
 export type SettingsKey = keyof LinkerPluginSettings;
@@ -17,4 +21,9 @@ export interface FilePayload {
 export interface VaultLinkerPluginLike {
   settings: LinkerPluginSettings;
   saveSettings(): Promise<void>;
+}
+
+export interface VaultFileFilter {
+  includeGlobs: string[];
+  excludeGlobs: string[];
 }

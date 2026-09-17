@@ -1,4 +1,5 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal, Notice, Setting, TFile } from "obsidian";
+import { formatAuditReportMarkdown } from "./audit-report";
 import { AuditReport } from "./linker";
 
 type LinkRunMode = "link" | "unlink";
@@ -52,8 +53,11 @@ export class ConfirmLinkerModal extends Modal {
 }
 
 export class AuditReportModal extends Modal {
+  private readonly markdown: string;
+
   constructor(app: App, private readonly report: AuditReport) {
     super(app);
+    this.markdown = formatAuditReportMarkdown(report);
   }
 
   onOpen(): void {
@@ -88,6 +92,30 @@ export class AuditReportModal extends Modal {
         top.createEl("li", { text: `${entry.title} (${String(entry.count)})` });
       }
     }
+
+    const actions = contentEl.createDiv({ cls: "vault-linker-audit-actions" });
+    const copyButton = actions.createEl("button", { text: "Copy Markdown report", type: "button" });
+    copyButton.onclick = (): void => {
+      void navigator.clipboard.writeText(this.markdown).then(() => {
+        new Notice("Audit report copied to clipboard");
+      });
+    };
+    const saveButton = actions.createEl("button", { text: "Save report in vault", type: "button" });
+    saveButton.onclick = (): void => {
+      void this.saveReportInVault();
+    };
+  }
+
+  private async saveReportInVault(): Promise<void> {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const path = `.obsidian/vault-linker-audit-${stamp}.md`;
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof TFile) {
+      await this.app.vault.modify(existing, this.markdown);
+    } else {
+      await this.app.vault.create(path, this.markdown);
+    }
+    new Notice(`Saved audit to ${path}`);
   }
 
   onClose(): void {

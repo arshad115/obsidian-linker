@@ -7,6 +7,10 @@ export const DEFAULT_SETTINGS: LinkerPluginSettings = {
   skipHeadings: true,
   minTitleLength: 1,
   ignorePhrases: "README",
+  caseSensitive: false,
+  firstLinkPerPhrase: false,
+  includeGlobs: "",
+  excludeGlobs: "",
 };
 
 export const SETTING_COPY: Record<SettingsKey, { name: string; desc: string }> = {
@@ -34,6 +38,22 @@ export const SETTING_COPY: Record<SettingsKey, { name: string; desc: string }> =
     name: "Ignored phrases",
     desc: "One phrase per line (case-insensitive).",
   },
+  caseSensitive: {
+    name: "Case-sensitive matching",
+    desc: "Only link text that matches a title or alias with the same letter case.",
+  },
+  firstLinkPerPhrase: {
+    name: "First link per phrase",
+    desc: "Add at most one wikilink per phrase in each note (first occurrence only).",
+  },
+  includeGlobs: {
+    name: "Include paths (globs)",
+    desc: "Only modify notes whose vault path matches one pattern per line (e.g. notes/**). Empty = all notes.",
+  },
+  excludeGlobs: {
+    name: "Exclude paths (globs)",
+    desc: "Skip notes matching these vault-relative globs (e.g. templates/**).",
+  },
 };
 
 function readBoolean(record: Record<string, unknown>, key: SettingsKey): boolean | undefined {
@@ -57,18 +77,34 @@ export function parseStoredSettings(data: unknown): Partial<LinkerPluginSettings
   }
   const record = data as Record<string, unknown>;
   const parsed: Partial<LinkerPluginSettings> = {};
-  const noSelfLinks = readBoolean(record, "noSelfLinks");
-  if (noSelfLinks !== undefined) parsed.noSelfLinks = noSelfLinks;
-  const useAliases = readBoolean(record, "useAliases");
-  if (useAliases !== undefined) parsed.useAliases = useAliases;
-  const useHeadings = readBoolean(record, "useHeadings");
-  if (useHeadings !== undefined) parsed.useHeadings = useHeadings;
-  const skipHeadings = readBoolean(record, "skipHeadings");
-  if (skipHeadings !== undefined) parsed.skipHeadings = skipHeadings;
-  const minTitleLength = readNumber(record, "minTitleLength");
-  if (minTitleLength !== undefined) parsed.minTitleLength = minTitleLength;
-  const ignorePhrases = readString(record, "ignorePhrases");
-  if (ignorePhrases !== undefined) parsed.ignorePhrases = ignorePhrases;
+  const keys: SettingsKey[] = [
+    "noSelfLinks",
+    "useAliases",
+    "useHeadings",
+    "skipHeadings",
+    "minTitleLength",
+    "ignorePhrases",
+    "caseSensitive",
+    "firstLinkPerPhrase",
+    "includeGlobs",
+    "excludeGlobs",
+  ];
+  for (const key of keys) {
+    if (key === "minTitleLength") {
+      const minTitleLength = readNumber(record, key);
+      if (minTitleLength !== undefined) parsed.minTitleLength = minTitleLength;
+    } else if (
+      key === "ignorePhrases" ||
+      key === "includeGlobs" ||
+      key === "excludeGlobs"
+    ) {
+      const text = readString(record, key);
+      if (text !== undefined) parsed[key] = text;
+    } else {
+      const flag = readBoolean(record, key);
+      if (flag !== undefined) parsed[key] = flag;
+    }
+  }
   return parsed;
 }
 
@@ -102,7 +138,15 @@ export function applySettingValue(
       }
       break;
     case "ignorePhrases":
-      if (typeof value === "string") settings.ignorePhrases = value;
+    case "includeGlobs":
+    case "excludeGlobs":
+      if (typeof value === "string") settings[key] = value;
+      break;
+    case "caseSensitive":
+      if (typeof value === "boolean") settings.caseSensitive = value;
+      break;
+    case "firstLinkPerPhrase":
+      if (typeof value === "boolean") settings.firstLinkPerPhrase = value;
       break;
     default:
       break;

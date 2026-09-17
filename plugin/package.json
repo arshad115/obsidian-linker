@@ -1,6 +1,6 @@
 {
   "name": "vault-linker",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Obsidian plugin for automatic title linking",
   "main": "main.js",
   "scripts": {

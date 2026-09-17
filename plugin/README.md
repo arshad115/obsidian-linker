@@ -20,7 +20,7 @@ Desktop Obsidian plugin that adds `[[wikilinks]]` when note titles (and optional
 - **Audit vault links** — pending links, broken wikilinks, zero-backlink notes
 - **Remove managed title links** / **Preview removing managed links**
 
-Settings align with the CLI: self-links, aliases, H1 headings, skip headings, min title length, ignored phrases.
+Settings align with the CLI: self-links, aliases, H1 headings, skip headings, min title length, ignored phrases, case-sensitive matching, first link per phrase, and include/exclude path globs. Audit reports can be copied as Markdown or saved under `.obsidian/`.
 
 ![Vault Linker plugin settings](../images/plugin-settings.png)
 

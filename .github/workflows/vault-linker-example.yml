@@ -1,0 +1,28 @@
+# Example: run Vault Linker against the demo fixture in this repo (dry run + audit).
+# Copy/adapt for your vault: set VAULT_PATH and run on schedule or workflow_dispatch.
+
+name: Vault Linker (example)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "vault_linker/**"
+      - "images/fixtures/demo-vault/**"
+      - ".github/workflows/vault-linker-example.yml"
+
+jobs:
+  vault-linker-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Vault Linker from source
+        run: pip install -e ".[dev]"
+      - name: Audit demo vault
+        run: vaultlinker images/fixtures/demo-vault --audit -v
+      - name: Dry-run link pass (parallel)
+        run: vaultlinker images/fixtures/demo-vault --dry-run -v --jobs 4 --no-self-links

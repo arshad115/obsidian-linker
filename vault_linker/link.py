@@ -28,7 +28,12 @@ class CompiledLinkPhrase:
     pattern: re.Pattern
 
 
-def compile_link_phrases(link_phrases: List[LinkPhrase]) -> List[CompiledLinkPhrase]:
+def compile_link_phrases(
+    link_phrases: List[LinkPhrase],
+    *,
+    case_sensitive: bool = False,
+) -> List[CompiledLinkPhrase]:
+    flags = 0 if case_sensitive else re.IGNORECASE
     compiled = []
     for entry in link_phrases:
         compiled.append(
@@ -36,7 +41,7 @@ def compile_link_phrases(link_phrases: List[LinkPhrase]) -> List[CompiledLinkPhr
                 entry=entry,
                 pattern=re.compile(
                     rf'(?<!\[\[)\b{re.escape(entry.phrase)}\b(?!\]\])',
-                    re.IGNORECASE,
+                    flags,
                 ),
             )
         )
@@ -54,6 +59,8 @@ def process_single_file(
     *,
     no_self_links: bool,
     skip_headings: bool,
+    case_sensitive: bool = False,
+    first_link_per_phrase: bool = False,
 ) -> FileProcessResult:
     content, code_block_map, inline_code_map, embed_map, md_link_map, heading_map = protect_regions(
         content, skip_headings=skip_headings
@@ -66,18 +73,28 @@ def process_single_file(
     content_without_links = EXISTING_LINKS_PATTERN.sub('', content)
     changes: List[LinkChange] = []
     links_added_in_file = 0
+    linked_phrase_keys: Set[str] = set()
 
     for compiled in compiled_phrases:
         entry = compiled.entry
         if no_self_links and entry.source_file == file:
             continue
-        if entry.phrase_lower not in content_without_links.lower():
+        if case_sensitive:
+            if entry.phrase not in content_without_links:
+                continue
+        elif entry.phrase_lower not in content_without_links.lower():
             continue
 
-        def replace_match(match, _file=file, _entry=entry):
+        phrase_key = entry.phrase if case_sensitive else entry.phrase_lower
+
+        def replace_match(match, _file=file, _entry=entry, _phrase_key=phrase_key):
             nonlocal links_added_in_file
-            links_added_in_file += 1
             matched = match.group(0)
+            if first_link_per_phrase and _phrase_key in linked_phrase_keys:
+                return matched
+            links_added_in_file += 1
+            if first_link_per_phrase:
+                linked_phrase_keys.add(_phrase_key)
             wikilink = format_wikilink(_entry.canonical, matched)
             line = line_number_at(content, match.start())
             changes.append(
@@ -183,6 +200,8 @@ def link_files(
     ignore_phrases: Optional[Set[str]] = None,
     min_title_length: int = 1,
     jobs: int = 1,
+    case_sensitive: bool = False,
+    first_link_per_phrase: bool = False,
 ) -> LinkResult:
     if output_dir and dry_run:
         raise ValueError("Cannot use --output together with --dry-run")
@@ -205,7 +224,10 @@ def link_files(
         ignore_phrases=ignore_phrases,
         min_title_length=min_title_length,
     )
-    compiled_phrases = compile_link_phrases(link_phrases)
+    compiled_phrases = compile_link_phrases(
+        link_phrases,
+        case_sensitive=case_sensitive,
+    )
 
     result = LinkResult(warnings=list(index_warnings))
     modified_contents: Dict[str, StoredContent] = {}
@@ -224,6 +246,8 @@ def link_files(
             compiled_phrases,
             no_self_links=no_self_links,
             skip_headings=skip_headings,
+            case_sensitive=case_sensitive,
+            first_link_per_phrase=first_link_per_phrase,
         )
 
     process_results = map_parallel(

@@ -134,6 +134,16 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Parallel workers for read/process/write (default: 1). Use 0 for automatic (CPU count, max 32)",
     )
+    parser.add_argument(
+        "--case-sensitive",
+        action="store_true",
+        help="Match note titles and aliases with exact letter case",
+    )
+    parser.add_argument(
+        "--first-link-per-phrase",
+        action="store_true",
+        help="Add at most one wikilink per phrase per file (first occurrence only)",
+    )
     return parser
 
 
@@ -179,6 +189,8 @@ def main(argv=None) -> int:
             min_title_length=args.min_title_length,
             show_progress=args.verbose,
             jobs=args.jobs,
+            case_sensitive=args.case_sensitive,
+            first_link_per_phrase=args.first_link_per_phrase,
         )
         if audit.warnings:
             print_warnings(audit.warnings)
@@ -227,6 +239,8 @@ def main(argv=None) -> int:
         ignore_phrases=ignore_phrases,
         min_title_length=args.min_title_length,
         jobs=args.jobs,
+        case_sensitive=args.case_sensitive,
+        first_link_per_phrase=args.first_link_per_phrase,
     )
 
     if result.warnings:

@@ -11,6 +11,7 @@ import { AuditReportModal, ConfirmLinkerModal } from "./modals";
 import { mergeSettings, parseStoredSettings } from "./settings-storage";
 import { LinkerSettingTab } from "./settings-tab";
 import { LinkerPluginSettings } from "./types";
+import { parseGlobLines } from "./globs";
 import { contentForPath, loadMarkdownPayload } from "./vault-io";
 
 export default class VaultLinkerPlugin extends Plugin {
@@ -71,6 +72,13 @@ export default class VaultLinkerPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  fileFilter() {
+    return {
+      includeGlobs: parseGlobLines(this.settings.includeGlobs),
+      excludeGlobs: parseGlobLines(this.settings.excludeGlobs),
+    };
+  }
+
   linkerOptions(): LinkerOptions {
     return {
       noSelfLinks: this.settings.noSelfLinks,
@@ -78,6 +86,8 @@ export default class VaultLinkerPlugin extends Plugin {
       useHeadings: this.settings.useHeadings,
       skipHeadings: this.settings.skipHeadings,
       minTitleLength: this.settings.minTitleLength,
+      caseSensitive: this.settings.caseSensitive,
+      firstLinkPerPhrase: this.settings.firstLinkPerPhrase,
       ignorePhrases: new Set(
         this.settings.ignorePhrases
           .split("\n")
@@ -99,7 +109,8 @@ export default class VaultLinkerPlugin extends Plugin {
   }
 
   async runLinker(dryRun: boolean): Promise<void> {
-    const { files, filePayload } = await loadMarkdownPayload(this.app.vault);
+    const filter = this.fileFilter();
+    const { files, filePayload } = await loadMarkdownPayload(this.app.vault, filter);
     const options = this.linkerOptions();
     const phrases = buildPhrases(filePayload, options);
     let totalLinks = 0;
@@ -128,7 +139,8 @@ export default class VaultLinkerPlugin extends Plugin {
   }
 
   async runUnlink(dryRun: boolean): Promise<void> {
-    const { files, filePayload } = await loadMarkdownPayload(this.app.vault);
+    const filter = this.fileFilter();
+    const { files, filePayload } = await loadMarkdownPayload(this.app.vault, filter);
     const options = this.linkerOptions();
     const phrases = buildPhrases(filePayload, options);
     const managedKeys = buildManagedLinkKeys(phrases);
@@ -158,7 +170,8 @@ export default class VaultLinkerPlugin extends Plugin {
   }
 
   async runAudit(): Promise<void> {
-    const { filePayload } = await loadMarkdownPayload(this.app.vault);
+    const filter = this.fileFilter();
+    const { filePayload } = await loadMarkdownPayload(this.app.vault, filter);
     const report = auditVault(filePayload, this.linkerOptions());
     const modal = new AuditReportModal(this.app, report);
     modal.open();

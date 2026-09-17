@@ -1,10 +1,17 @@
 import { TFile, Vault } from "obsidian";
-import { FilePayload } from "./types";
+import { pathMatchesGlobs } from "./globs";
+import { FilePayload, VaultFileFilter } from "./types";
 
 export async function loadMarkdownPayload(
-  vault: Vault
+  vault: Vault,
+  filter?: VaultFileFilter
 ): Promise<{ files: TFile[]; filePayload: FilePayload[] }> {
-  const files: TFile[] = vault.getMarkdownFiles();
+  const allFiles: TFile[] = vault.getMarkdownFiles();
+  const includeGlobs = filter?.includeGlobs ?? [];
+  const excludeGlobs = filter?.excludeGlobs ?? [];
+  const files = allFiles.filter((file) =>
+    pathMatchesGlobs(file.path, includeGlobs, excludeGlobs)
+  );
   const filePayload: FilePayload[] = [];
   for (const file of files) {
     const content: string = await vault.read(file);

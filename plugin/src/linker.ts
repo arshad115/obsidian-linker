@@ -11,6 +11,8 @@ export interface LinkerOptions {
   skipHeadings: boolean;
   ignorePhrases: Set<string>;
   minTitleLength: number;
+  caseSensitive: boolean;
+  firstLinkPerPhrase: boolean;
 }
 
 export interface LinkerResult {
@@ -59,8 +61,15 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function formatWikilink(canonical: string, matched: string): string {
-  if (matched.toLocaleLowerCase() === canonical.toLocaleLowerCase()) {
+export function formatWikilink(
+  canonical: string,
+  matched: string,
+  caseSensitive: boolean
+): string {
+  const same = caseSensitive
+    ? matched === canonical
+    : matched.toLocaleLowerCase() === canonical.toLocaleLowerCase();
+  if (same) {
     return `[[${matched}]]`;
   }
   return `[[${canonical}|${matched}]]`;
@@ -163,7 +172,7 @@ export function buildPhrases(
   const phraseMap = new Map<string, LinkPhrase>();
   const register = (phrase: string, canonical: string, sourcePath: string) => {
     if (phraseIgnored(phrase, options)) return;
-    const key = phrase.toLocaleLowerCase();
+    const key = options.caseSensitive ? phrase : phrase.toLocaleLowerCase();
     phraseMap.set(key, { phrase, canonical, sourcePath });
   };
 
@@ -256,18 +265,30 @@ export function linkContent(
   const withoutLinks = protectedContent.replace(WIKILINK, "");
 
   let working = protectedContent;
+  const linkedPhraseKeys = new Set<string>();
   for (const entry of phrases) {
     if (options.noSelfLinks && entry.sourcePath === sourcePath) continue;
-    if (!withoutLinks.toLocaleLowerCase().includes(entry.phrase.toLocaleLowerCase())) {
+    const phraseKey = options.caseSensitive
+      ? entry.phrase
+      : entry.phrase.toLocaleLowerCase();
+    const haystack = options.caseSensitive ? withoutLinks : withoutLinks.toLocaleLowerCase();
+    const needle = options.caseSensitive ? entry.phrase : entry.phrase.toLocaleLowerCase();
+    if (!haystack.includes(needle)) {
       continue;
     }
     const pattern = new RegExp(
       `(?<!\\[\\[)\\b${escapeRegExp(entry.phrase)}\\b(?!\\]\\])`,
-      "gi"
+      options.caseSensitive ? "g" : "gi"
     );
     working = working.replace(pattern, (matched) => {
+      if (options.firstLinkPerPhrase && linkedPhraseKeys.has(phraseKey)) {
+        return matched;
+      }
+      if (options.firstLinkPerPhrase) {
+        linkedPhraseKeys.add(phraseKey);
+      }
       linksAdded += 1;
-      return formatWikilink(entry.canonical, matched);
+      return formatWikilink(entry.canonical, matched, options.caseSensitive);
     });
   }
 

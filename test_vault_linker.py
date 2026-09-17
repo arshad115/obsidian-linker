@@ -595,5 +595,32 @@ class Tests(unittest.TestCase):
             self.assertIn("[[Topic]]", f.read())
         self.assertTrue(any('Duplicate note title' in w for w in result.warnings))
 
+    def test_first_link_per_phrase(self):
+        self.create_file(self.file1_path, "About object-oriented programming.")
+        self.create_file(
+            self.file3_path,
+            "object-oriented programming is great. More object-oriented programming here.",
+        )
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files, first_link_per_phrase=True, no_self_links=True)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as handle:
+            content = handle.read()
+        self.assertEqual(content.count("[[object-oriented programming]]"), 1)
+
+    def test_case_sensitive_matching(self):
+        title_path = os.path.join(self.temp_dir.name, "Title.md")
+        self.create_file(title_path, "A note about proper nouns.")
+        self.create_file(self.file3_path, "Title is here but title should not link.")
+
+        markdown_files = find_markdown_files(self.temp_dir.name)
+        self.run_link(markdown_files, case_sensitive=True, no_self_links=True)
+
+        with open(self.file3_path, 'r', encoding='utf-8') as handle:
+            content = handle.read()
+        self.assertIn("[[Title]]", content)
+        self.assertNotIn("[[title]]", content)
+
 if __name__ == "__main__":
     unittest.main()

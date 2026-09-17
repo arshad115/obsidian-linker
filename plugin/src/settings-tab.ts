@@ -54,6 +54,26 @@ export class LinkerSettingTab extends PluginSettingTab {
           defaultValue: "README",
         },
       },
+      {
+        name: SETTING_COPY.caseSensitive.name,
+        desc: SETTING_COPY.caseSensitive.desc,
+        control: { type: "toggle", key: "caseSensitive", defaultValue: false },
+      },
+      {
+        name: SETTING_COPY.firstLinkPerPhrase.name,
+        desc: SETTING_COPY.firstLinkPerPhrase.desc,
+        control: { type: "toggle", key: "firstLinkPerPhrase", defaultValue: false },
+      },
+      {
+        name: SETTING_COPY.includeGlobs.name,
+        desc: SETTING_COPY.includeGlobs.desc,
+        control: { type: "textarea", key: "includeGlobs", defaultValue: "" },
+      },
+      {
+        name: SETTING_COPY.excludeGlobs.name,
+        desc: SETTING_COPY.excludeGlobs.desc,
+        control: { type: "textarea", key: "excludeGlobs", defaultValue: "" },
+      },
     ];
   }
 
@@ -129,6 +149,46 @@ export class LinkerSettingTab extends PluginSettingTab {
         text.setValue(settings.ignorePhrases);
         text.onChange((value: string) => {
           void this.setControlValue("ignorePhrases", value);
+        });
+      });
+
+    new Setting(containerEl)
+      .setName(SETTING_COPY.caseSensitive.name)
+      .setDesc(SETTING_COPY.caseSensitive.desc)
+      .addToggle((toggle) => {
+        toggle.setValue(settings.caseSensitive);
+        toggle.onChange((value: boolean) => {
+          void this.setControlValue("caseSensitive", value);
+        });
+      });
+
+    new Setting(containerEl)
+      .setName(SETTING_COPY.firstLinkPerPhrase.name)
+      .setDesc(SETTING_COPY.firstLinkPerPhrase.desc)
+      .addToggle((toggle) => {
+        toggle.setValue(settings.firstLinkPerPhrase);
+        toggle.onChange((value: boolean) => {
+          void this.setControlValue("firstLinkPerPhrase", value);
+        });
+      });
+
+    new Setting(containerEl)
+      .setName(SETTING_COPY.includeGlobs.name)
+      .setDesc(SETTING_COPY.includeGlobs.desc)
+      .addTextArea((text) => {
+        text.setValue(settings.includeGlobs);
+        text.onChange((value: string) => {
+          void this.setControlValue("includeGlobs", value);
+        });
+      });
+
+    new Setting(containerEl)
+      .setName(SETTING_COPY.excludeGlobs.name)
+      .setDesc(SETTING_COPY.excludeGlobs.desc)
+      .addTextArea((text) => {
+        text.setValue(settings.excludeGlobs);
+        text.onChange((value: string) => {
+          void this.setControlValue("excludeGlobs", value);
         });
       });
   }
