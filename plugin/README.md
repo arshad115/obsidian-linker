@@ -22,6 +22,8 @@ Desktop Obsidian plugin that adds `[[wikilinks]]` when note titles (and optional
 
 Settings align with the CLI: self-links, aliases, H1 headings, skip headings, min title length, ignored phrases.
 
+![Vault Linker plugin settings](../images/plugin-settings.png)
+
 CLI-only features: `--incremental`, `--jobs`, path globs, `--output` / `--backup`.
 
 The [Python CLI](../README.md) (`pip install vaultlinker`) supports incremental runs, globs, and backups for larger workflows.

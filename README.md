@@ -5,21 +5,24 @@
 
 ## Overview
 
-Vault Linker is a tool designed to help you manage and link your notes in Obsidian. It provides various features to enhance your note-taking experience.
+Vault Linker links note titles and YAML aliases across your Obsidian vault as wikilinks. Use the **CLI** (`vaultlinker`) for batch jobs, parallelism, and automation, or the **community plugin** for link, audit, and unlink from inside Obsidian.
 
 ## Linking
 
 <p float="left">
-  <img src="images/before.png" alt="Before" width="45%" />
-  <img src="images/after.png" alt="After" width="45%" />
+  <img src="images/before.png" alt="Graph before linking: mostly isolated notes" width="45%" />
+  <img src="images/after.png" alt="Graph after linking: denser connections" width="45%" />
 </p>
+
+*Obsidian graph view before and after running Vault Linker on a vault (illustrative).*
 
 ## Features
 
-- Automatic linking of notes
-- Uses Wikilink format
-- Skip links in metadata
-- Skip links in codeblocks, inline code
+- Automatic wikilinks for note titles and YAML aliases
+- **Parallel runs** with `--jobs` (read / process / write phases)
+- Dry-run, backup, output copy, globs, and incremental state
+- **Audit** broken links, pending links, and backlink stats; **unlink** managed title links
+- Skips metadata, code blocks, embeds, and markdown links (CLI + plugin)
 
 ## Linking Process
 
@@ -48,7 +51,6 @@ Package: **[vaultlinker on PyPI](https://pypi.org/project/vaultlinker/)**
 ```sh
 pip install vaultlinker
 vaultlinker /path/to/vault/ --help
-# or: vaultlinker /path/to/vault/ --help
 ```
 
 ### From source
@@ -69,7 +71,9 @@ pip install -r requirements.txt
 
 ## Usage
 
-![Usage Image](images/usage.png)
+![Vault Linker CLI dry run with parallel jobs](images/usage.png)
+
+*`vaultlinker` dry run with verbose progress (`-v`) and eight workers (`--jobs 8`).*
 
 After installation:
 
@@ -137,6 +141,8 @@ vaultlinker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templates/
 
 ### Audit and unlink
 
+![Vault Linker audit report in the terminal](images/audit.png)
+
 Audit the vault (no file changes):
 
 ```sh
@@ -170,7 +176,11 @@ vaultlinker /path/to/vault/ --ignore-file ./linker-ignore.txt
 
 ## Obsidian plugin
 
-A community plugin lives in [`plugin/`](plugin/) (source); `manifest.json`, `versions.json`, and `main.js` are at the **repo root** for Obsidian’s directory scanner. Build with `cd plugin && npm install && npm run build`, then submit via [community.obsidian.md](https://community.obsidian.md). See [plugin/README.md](plugin/README.md) and [PUBLISHING.md](PUBLISHING.md).
+Install **Vault Linker** from **Settings → Community plugins**, or build from [`plugin/`](plugin/) (source). Release assets (`manifest.json`, `versions.json`, `main.js`) live at the **repo root** for Obsidian’s directory scanner.
+
+![Vault Linker plugin settings](images/plugin-settings.png)
+
+See [plugin/README.md](plugin/README.md) and [PUBLISHING.md](PUBLISHING.md).
 
 Make sure to back up your vault before using this tool, as in-place runs can make irreversible edits unless you use `--dry-run` or `--output`.
 ## Running Tests
