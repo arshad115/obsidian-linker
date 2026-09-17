@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from obsidian_linker.constants import (
+from vault_linker.constants import (
     CODE_BLOCK_PATTERN,
     CODE_BLOCK_PLACEHOLDER,
     EMBED_PATTERN,
@@ -13,7 +13,7 @@ from obsidian_linker.constants import (
     MARKDOWN_LINK_PLACEHOLDER,
     METADATA_PLACEHOLDER,
 )
-from obsidian_linker.metadata import extract_metadata
+from vault_linker.metadata import extract_metadata
 
 
 def protect_regions(content: str, skip_headings: bool) -> Tuple[str, dict, dict, dict, dict, dict]:

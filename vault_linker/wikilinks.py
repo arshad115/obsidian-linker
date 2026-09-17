@@ -1,7 +1,7 @@
 import re
 from typing import Dict, Tuple
 
-from obsidian_linker.models import LinkPhrase
+from vault_linker.models import LinkPhrase
 
 WIKILINK_PATTERN = re.compile(r'(?<!!)\[\[([^\]]+)\]\]')
 

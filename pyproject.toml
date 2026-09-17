@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vaultlinker"
-version = "0.4.3"
-description = "Batch-link note titles in an Obsidian vault as wikilinks"
+version = "0.5.0"
+description = "Vault Linker — batch-link note titles in an Obsidian vault as wikilinks"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [{ name = "Arshad Mehmood" }]
-keywords = ["obsidian", "markdown", "wikilinks", "notes"]
+keywords = ["obsidian", "markdown", "wikilinks", "notes", "vault-linker"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -23,10 +23,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/arshad115/obsidian-linker"
-Repository = "https://github.com/arshad115/obsidian-linker"
-Issues = "https://github.com/arshad115/obsidian-linker/issues"
-Documentation = "https://github.com/arshad115/obsidian-linker#readme"
+Homepage = "https://github.com/arshad115/vault-linker"
+Repository = "https://github.com/arshad115/vault-linker"
+Issues = "https://github.com/arshad115/vault-linker/issues"
+Documentation = "https://github.com/arshad115/vault-linker#readme"
 
 [project.optional-dependencies]
 dev = [
@@ -34,11 +34,11 @@ dev = [
 ]
 
 [project.scripts]
-vaultlinker = "obsidian_linker.cli:main"
-obsidian-linker = "obsidian_linker.cli:main"
+vaultlinker = "vault_linker.cli:main"
+obsidian-linker = "vault_linker.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["obsidian_linker*"]
+include = ["vault_linker*"]
 
 [tool.pytest.ini_options]
 testpaths = ["."]

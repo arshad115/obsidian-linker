@@ -2,7 +2,7 @@ import fnmatch
 import os
 from typing import Iterable, List, Optional, Sequence, Set
 
-from obsidian_linker.constants import DEFAULT_EXCLUDE_DIR_NAMES
+from vault_linker.constants import DEFAULT_EXCLUDE_DIR_NAMES
 
 
 def resolve_exclude_dir_names(

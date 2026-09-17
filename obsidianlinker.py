@@ -1,6 +1,6 @@
-"""Backward-compatible facade for scripts and tests that import obsidianlinker."""
+"""Backward-compatible facade for scripts that import obsidianlinker."""
 
-from obsidian_linker import (
+from vault_linker import (
     LinkChange,
     LinkPhrase,
     LinkResult,
@@ -8,17 +8,17 @@ from obsidian_linker import (
     link_files,
     resolve_exclude_dir_names,
 )
-from obsidian_linker.cli import main
+from vault_linker.cli import main
 
 __all__ = [
-    'LinkChange',
-    'LinkPhrase',
-    'LinkResult',
-    'find_markdown_files',
-    'link_files',
-    'main',
-    'resolve_exclude_dir_names',
+    "LinkChange",
+    "LinkPhrase",
+    "LinkResult",
+    "find_markdown_files",
+    "link_files",
+    "main",
+    "resolve_exclude_dir_names",
 ]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

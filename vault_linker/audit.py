@@ -4,13 +4,13 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
-from obsidian_linker.constants import METADATA_PLACEHOLDER
-from obsidian_linker.link import compile_link_phrases, line_number_at, process_single_file, read_files
-from obsidian_linker.metadata import build_link_phrases, extract_metadata, note_canonical_title
-from obsidian_linker.models import LinkChange, LinkPhrase
-from obsidian_linker.parallel import map_parallel, resolve_worker_count
-from obsidian_linker.protect import protect_regions, restore_regions
-from obsidian_linker.wikilinks import WIKILINK_PATTERN, build_managed_link_keys, parse_wikilink_inner
+from vault_linker.constants import METADATA_PLACEHOLDER
+from vault_linker.link import compile_link_phrases, line_number_at, process_single_file, read_files
+from vault_linker.metadata import build_link_phrases, extract_metadata, note_canonical_title
+from vault_linker.models import LinkChange, LinkPhrase
+from vault_linker.parallel import map_parallel, resolve_worker_count
+from vault_linker.protect import protect_regions, restore_regions
+from vault_linker.wikilinks import WIKILINK_PATTERN, build_managed_link_keys, parse_wikilink_inner
 
 
 @dataclass
@@ -151,7 +151,7 @@ def audit_vault(
 
 
 def print_audit_report(audit: AuditResult, *, verbose: bool = False) -> None:
-    print("=== Obsidian Linker audit ===")
+    print("=== Vault Linker audit ===")
     print(f"Pending links (would add): {audit.pending_link_count} in {audit.pending_file_count} files")
 
     print(f"\nBroken wikilinks: {len(audit.broken_links)}")

@@ -1,11 +1,11 @@
 import argparse
 import os
 
-from obsidian_linker.audit import audit_vault, print_audit_report, print_unlink_report, unlink_files
-from obsidian_linker.ignore import load_ignore_phrases
-from obsidian_linker.link import link_files
-from obsidian_linker.scan import find_markdown_files, resolve_exclude_dir_names
-from obsidian_linker.state import default_state_path
+from vault_linker.audit import audit_vault, print_audit_report, print_unlink_report, unlink_files
+from vault_linker.ignore import load_ignore_phrases
+from vault_linker.link import link_files
+from vault_linker.scan import find_markdown_files, resolve_exclude_dir_names
+from vault_linker.state import default_state_path
 
 
 def print_dry_run_report(changes: list) -> None:
@@ -19,7 +19,7 @@ def print_warnings(warnings: list) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Link markdown files in an Obsidian vault.")
+    parser = argparse.ArgumentParser(description="Vault Linker — link note titles in an Obsidian vault.")
     parser.add_argument("directory", help="Path to the Obsidian vault directory")
     parser.add_argument(
         "-v",
@@ -106,7 +106,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--state-file",
         metavar="PATH",
-        help="Path for incremental state (default: <vault>/.obsidian/obsidian-linker-state.json)",
+        help="Path for incremental state (default: <vault>/.obsidian/vault-linker-state.json)",
     )
     parser.add_argument(
         "--ignore-phrase",

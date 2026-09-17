@@ -14,7 +14,7 @@ The installable package name is **`vaultlinker`**. The console commands are **`v
    - PyPI → **Publishing** → **Add a new pending publisher** (or add to project after first publish)
    - **PyPI project name:** `vaultlinker`
    - **Owner:** `arshad115`
-   - **Repository name:** `obsidian-linker`
+   - **Repository name:** `vault-linker`
    - **Workflow name:** `release.yml`
    - **Environment name:** `pypi`
 4. In GitHub: **Settings → Environments → New environment** named `pypi`.
@@ -55,7 +55,7 @@ Submit at **[community.obsidian.md](https://community.obsidian.md)** (developer 
   "name": "Vault Linker",
   "author": "Arshad Mehmood",
   "description": "Add, audit, and remove wikilinks when note titles and aliases appear in your vault.",
-  "repo": "arshad115/obsidian-linker"
+  "repo": "arshad115/vault-linker"
 }
 ```
 

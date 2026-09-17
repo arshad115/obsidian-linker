@@ -4,12 +4,12 @@ import shutil
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
-from obsidian_linker.constants import EXISTING_LINKS_PATTERN, METADATA_PLACEHOLDER
-from obsidian_linker.metadata import build_link_phrases, extract_metadata, format_wikilink
-from obsidian_linker.models import LinkChange, LinkPhrase, LinkResult
-from obsidian_linker.parallel import map_parallel, resolve_worker_count
-from obsidian_linker.protect import finalize_modified_content, protect_regions, restore_regions
-from obsidian_linker.state import default_state_path, files_to_process, load_state, save_state
+from vault_linker.constants import EXISTING_LINKS_PATTERN, METADATA_PLACEHOLDER
+from vault_linker.metadata import build_link_phrases, extract_metadata, format_wikilink
+from vault_linker.models import LinkChange, LinkPhrase, LinkResult
+from vault_linker.parallel import map_parallel, resolve_worker_count
+from vault_linker.protect import finalize_modified_content, protect_regions, restore_regions
+from vault_linker.state import default_state_path, files_to_process, load_state, save_state
 
 StoredContent = Tuple[str, str, dict, dict, dict, dict, dict]
 

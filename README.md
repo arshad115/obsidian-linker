@@ -1,11 +1,11 @@
 # Vault Linker
 
-[![Run Tests](https://github.com/arshad115/obsidian-linker/actions/workflows/run-tests.yml/badge.svg)](https://github.com/arshad115/obsidian-linker/actions/workflows/run-tests.yml)
+[![Run Tests](https://github.com/arshad115/vault-linker/actions/workflows/run-tests.yml/badge.svg)](https://github.com/arshad115/vault-linker/actions/workflows/run-tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/vaultlinker)](https://pypi.org/project/vaultlinker/)
 
 ## Overview
 
-Obsidian Linker is a tool designed to help you manage and link your notes in Obsidian. It provides various features to enhance your note-taking experience.
+Vault Linker is a tool designed to help you manage and link your notes in Obsidian. It provides various features to enhance your note-taking experience.
 
 ## Linking
 
@@ -48,7 +48,7 @@ Package: **[vaultlinker on PyPI](https://pypi.org/project/vaultlinker/)**
 ```sh
 pip install vaultlinker
 vaultlinker /path/to/vault/ --help
-# or: obsidian-linker /path/to/vault/ --help
+# or: vaultlinker /path/to/vault/ --help
 ```
 
 ### From source
@@ -56,8 +56,8 @@ vaultlinker /path/to/vault/ --help
 Clone the repository and install the package (recommended):
 
 ```sh
-git clone https://github.com/arshad115/obsidian-linker.git
-cd obsidian-linker
+git clone https://github.com/arshad115/vault-linker.git
+cd vault-linker
 pip install -e ".[dev]"
 ```
 
@@ -74,13 +74,13 @@ pip install -r requirements.txt
 After installation:
 
 ```sh
-obsidian-linker /path/to/vault/
+vaultlinker /path/to/vault/
 ```
 
 Or run the module directly:
 
 ```sh
-python obsidianlinker.py /path/to/vault/
+python vaultlinker.py /path/to/vault/
 ```
 
 Use `-v` / `--verbose` for progress bars and scan details (default is quiet except warnings and the summary).
@@ -88,8 +88,8 @@ Use `-v` / `--verbose` for progress bars and scan details (default is quiet exce
 Parallel processing (read, link, and write phases):
 
 ```sh
-obsidian-linker /path/to/vault/ --jobs 8
-obsidian-linker /path/to/vault/ --jobs 0   # automatic worker count
+vaultlinker /path/to/vault/ --jobs 8
+vaultlinker /path/to/vault/ --jobs 0   # automatic worker count
 ```
 
 ### Safety options
@@ -97,25 +97,25 @@ obsidian-linker /path/to/vault/ --jobs 0   # automatic worker count
 Preview changes without writing files:
 
 ```sh
-python obsidianlinker.py /path/to/vault/ --dry-run
+python vaultlinker.py /path/to/vault/ --dry-run
 ```
 
 Write linked copies to another directory (vault files stay unchanged):
 
 ```sh
-python obsidianlinker.py /path/to/vault/ --output /path/to/linked-vault/
+python vaultlinker.py /path/to/vault/ --output /path/to/linked-vault/
 ```
 
 Create a `.bak` copy of each file before overwriting it in the vault:
 
 ```sh
-python obsidianlinker.py /path/to/vault/ --backup
+python vaultlinker.py /path/to/vault/ --backup
 ```
 
 Skip linking a note's title inside its own file (e.g. do not turn `README` into `[[README]]` in `README.md`):
 
 ```sh
-python obsidianlinker.py /path/to/vault/ --no-self-links
+python vaultlinker.py /path/to/vault/ --no-self-links
 ```
 
 By default, markdown under `.obsidian`, `.git`, `attachments`, and similar folders is skipped. Add more directory names with `--exclude DIRNAME`, or pass `--no-default-excludes` to scan everything.
@@ -123,7 +123,7 @@ By default, markdown under `.obsidian`, `.git`, `attachments`, and similar folde
 Limit which notes are processed with vault-relative globs:
 
 ```sh
-obsidian-linker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templates/**'
+vaultlinker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templates/**'
 ```
 
 ### Obsidian-aware linking
@@ -140,8 +140,8 @@ obsidian-linker /path/to/vault/ --include-glob 'notes/**' --exclude-glob 'templa
 Audit the vault (no file changes):
 
 ```sh
-obsidian-linker /path/to/vault/ --audit
-obsidian-linker /path/to/vault/ --audit -v   # include pending link details
+vaultlinker /path/to/vault/ --audit
+vaultlinker /path/to/vault/ --audit -v   # include pending link details
 ```
 
 Reports pending links (same rules as a dry run), broken `[[wikilinks]]` with no matching note, notes with zero incoming links, and the most-linked titles.
@@ -149,23 +149,23 @@ Reports pending links (same rules as a dry run), broken `[[wikilinks]]` with no 
 Remove wikilinks that this tool would create (title and alias forms only; manual links to other targets are kept):
 
 ```sh
-obsidian-linker /path/to/vault/ --unlink --dry-run
-obsidian-linker /path/to/vault/ --unlink --backup
+vaultlinker /path/to/vault/ --unlink --dry-run
+vaultlinker /path/to/vault/ --unlink --backup
 ```
 
 ### Incremental and blocklist
 
-Re-run only notes that changed since the last successful incremental run (state is stored in `.obsidian/obsidian-linker-state.json`). If notes are added or removed, every note is processed again so new titles can link correctly.
+Re-run only notes that changed since the last successful incremental run (state is stored in `.obsidian/vault-linker-state.json`). If notes are added or removed, every note is processed again so new titles can link correctly.
 
 ```sh
-obsidian-linker /path/to/vault/ --incremental
+vaultlinker /path/to/vault/ --incremental
 ```
 
 Skip noisy short titles or specific words:
 
 ```sh
-obsidian-linker /path/to/vault/ --ignore-phrase README --min-title-length 4
-obsidian-linker /path/to/vault/ --ignore-file ./linker-ignore.txt
+vaultlinker /path/to/vault/ --ignore-phrase README --min-title-length 4
+vaultlinker /path/to/vault/ --ignore-file ./linker-ignore.txt
 ```
 
 ## Obsidian plugin
@@ -175,7 +175,7 @@ A community plugin lives in [`plugin/`](plugin/) (source); `manifest.json`, `ver
 Make sure to back up your vault before using this tool, as in-place runs can make irreversible edits unless you use `--dry-run` or `--output`.
 ## Running Tests
 
-To run tests for Obsidian Linker, use the following command:
+To run tests for Vault Linker, use the following command:
 ```sh
 pytest
 ```
@@ -195,7 +195,7 @@ This will execute all the tests and provide you with a summary of the results. M
 
 ## Contributing
 
-We welcome contributions to Obsidian Linker! If you have an idea for a new feature or have found a bug, please open an issue or submit a pull request.
+We welcome contributions to Vault Linker! If you have an idea for a new feature or have found a bug, please open an issue or submit a pull request.
 
 ### Steps to Contribute
 

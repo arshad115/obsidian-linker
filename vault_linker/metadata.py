@@ -2,8 +2,8 @@ import os
 import re
 from typing import Dict, List, Optional, Set, Tuple
 
-from obsidian_linker.constants import FIRST_H1_PATTERN, METADATA_PATTERN
-from obsidian_linker.models import LinkPhrase
+from vault_linker.constants import FIRST_H1_PATTERN, METADATA_PATTERN
+from vault_linker.models import LinkPhrase
 
 
 def strip_yaml_scalar(value: str) -> str:

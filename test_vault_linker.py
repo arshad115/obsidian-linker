@@ -1,11 +1,11 @@
 import os
 import tempfile
 import unittest
-from obsidianlinker import find_markdown_files, link_files
-from obsidian_linker.audit import audit_vault, unlink_files
-from obsidian_linker.scan import path_matches_globs
-from obsidian_linker.parallel import resolve_worker_count
-from obsidian_linker.state import default_state_path, files_to_process
+from vault_linker import find_markdown_files, link_files
+from vault_linker.audit import audit_vault, unlink_files
+from vault_linker.scan import path_matches_globs
+from vault_linker.parallel import resolve_worker_count
+from vault_linker.state import default_state_path, files_to_process
 
 class Tests(unittest.TestCase):
 
